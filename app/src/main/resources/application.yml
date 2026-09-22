@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: escaperoom-c15
+  datasource:
+    url: jdbc:postgresql://localhost:5432/escaperoom_c15
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+server:
+  port: 8080
