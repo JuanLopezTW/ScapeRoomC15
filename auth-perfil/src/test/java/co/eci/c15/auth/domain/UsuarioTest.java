@@ -1,16 +1,33 @@
 package co.eci.c15.auth.domain;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Placeholder de prueba unitaria de dominio (sin Spring, rapida).
- * Reemplazar por las reglas de negocio reales de Auth+Perfil.
- */
 class UsuarioTest {
 
     @Test
-    void placeholder() {
-        assertNotNull(this);
+    void creaUsuarioValido() {
+        Usuario u = Usuario.crear("jugador1");
+        assertEquals("jugador1", u.getUsername());
+        assertNotNull(u.getId());
+    }
+
+    @Test
+    void rechazaUsernameVacio() {
+        assertThrows(UsernameInvalidoException.class, () -> Usuario.crear(""));
+        assertThrows(UsernameInvalidoException.class, () -> Usuario.crear("   "));
+        assertThrows(UsernameInvalidoException.class, () -> Usuario.crear(null));
+    }
+
+    @Test
+    void rechazaUsernameInvalido() {
+        assertThrows(UsernameInvalidoException.class, () -> Usuario.crear("ab")); // muy corto
+        assertThrows(UsernameInvalidoException.class, () -> Usuario.crear("nombre con espacios"));
+        assertThrows(UsernameInvalidoException.class, () -> Usuario.crear("nombre@invalido"));
+    }
+
+    @Test
+    void aceptaUsernameConGuionBajo() {
+        assertDoesNotThrow(() -> Usuario.crear("jugador_1"));
     }
 }
