@@ -1,6 +1,9 @@
 package co.eci.c15.salas.domain;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 public final class Sala {
@@ -13,6 +16,7 @@ public final class Sala {
     private Estado estado;
     private int numEquipos;
     private int jugadoresPorEquipo;
+    private final Set<String> jugadores = new HashSet<>();
 
     private Sala(String id, String nombre, String anfitrionId) {
         this.id = id;
@@ -37,6 +41,12 @@ public final class Sala {
         this.jugadoresPorEquipo = jugadoresPorEquipo;
     }
 
+    public void unirJugador(String userId) {
+        if (estado == Estado.EN_PARTIDA) throw new PartidaYaIniciadaException(id);
+        if (jugadores.size() >= numEquipos * jugadoresPorEquipo) throw new SalaLlenaException(id);
+        jugadores.add(userId);
+    }
+
     public void iniciarPartida() { this.estado = Estado.EN_PARTIDA; }
 
     public String getId() { return id; }
@@ -46,4 +56,6 @@ public final class Sala {
     public boolean isDisponible() { return estado == Estado.DISPONIBLE; }
     public int getNumEquipos() { return numEquipos; }
     public int getJugadoresPorEquipo() { return jugadoresPorEquipo; }
+    public Set<String> getJugadores() { return Collections.unmodifiableSet(jugadores); }
+    public int getCupoTotal() { return numEquipos * jugadoresPorEquipo; }
 }
