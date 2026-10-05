@@ -11,18 +11,30 @@ public final class Sala {
     private final String nombre;
     private final String anfitrionId;
     private Estado estado;
+    private int numEquipos;
+    private int jugadoresPorEquipo;
 
     private Sala(String id, String nombre, String anfitrionId) {
         this.id = id;
         this.nombre = nombre;
         this.anfitrionId = anfitrionId;
         this.estado = Estado.DISPONIBLE;
+        this.numEquipos = 2;
+        this.jugadoresPorEquipo = 4;
     }
 
     public static Sala crear(String nombre, String anfitrionId) {
         if (nombre == null || nombre.isBlank()) throw new IllegalArgumentException("El nombre de la sala no puede estar vacío");
         Objects.requireNonNull(anfitrionId, "anfitrionId");
         return new Sala(UUID.randomUUID().toString(), nombre.trim(), anfitrionId);
+    }
+
+    public void configurar(String solicitanteId, int numEquipos, int jugadoresPorEquipo) {
+        if (!anfitrionId.equals(solicitanteId)) throw new NoEsAnfitrionException(solicitanteId);
+        if (numEquipos < 1) throw new ConfiguracionInvalidaException("El número de equipos debe ser al menos 1");
+        if (jugadoresPorEquipo < 1) throw new ConfiguracionInvalidaException("Los jugadores por equipo deben ser al menos 1");
+        this.numEquipos = numEquipos;
+        this.jugadoresPorEquipo = jugadoresPorEquipo;
     }
 
     public void iniciarPartida() { this.estado = Estado.EN_PARTIDA; }
@@ -32,4 +44,6 @@ public final class Sala {
     public String getAnfitrionId() { return anfitrionId; }
     public Estado getEstado() { return estado; }
     public boolean isDisponible() { return estado == Estado.DISPONIBLE; }
+    public int getNumEquipos() { return numEquipos; }
+    public int getJugadoresPorEquipo() { return jugadoresPorEquipo; }
 }
