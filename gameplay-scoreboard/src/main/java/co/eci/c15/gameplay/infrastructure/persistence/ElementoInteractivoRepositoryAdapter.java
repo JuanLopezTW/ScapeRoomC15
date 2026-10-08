@@ -21,4 +21,10 @@ public class ElementoInteractivoRepositoryAdapter implements ElementoInteractivo
                 .map(e -> new ElementoInteractivo(e.getId(), e.getAcertijoId(), e.getTipo(), e.getDescripcion()))
                 .toList();
     }
+
+    @Override
+    public ElementoInteractivo save(ElementoInteractivo e) {
+        jpa.save(new ElementoInteractivoJpa(e.getId(), e.getAcertijoId(), e.getTipo(), e.getDescripcion()));
+        return e;
+    }
 }

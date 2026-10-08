@@ -16,24 +16,17 @@ public class AcertijoRepositoryAdapter implements AcertijoRepository {
     }
 
     @Override
-    public Optional<Acertijo> findById(String id) {
-        return jpa.findById(id).map(this::toDomain);
-    }
-
-    @Override
     public Optional<Acertijo> findByComponenteMapaId(String componenteMapaId) {
         return jpa.findByComponenteMapaId(componenteMapaId).map(this::toDomain);
     }
 
     @Override
     public Acertijo save(Acertijo a) {
-        jpa.save(new AcertijoJpa(a.getId(), a.getComponenteMapaId(), a.getEnunciado(), a.getEstado()));
+        jpa.save(new AcertijoJpa(a.getId(), a.getComponenteMapaId(), a.getEnunciado()));
         return a;
     }
 
     private Acertijo toDomain(AcertijoJpa e) {
-        Acertijo a = new Acertijo(e.getId(), e.getComponenteMapaId(), e.getEnunciado());
-        if (e.getEstado() == Acertijo.Estado.RESUELTO) a.marcarResuelto();
-        return a;
+        return new Acertijo(e.getId(), e.getComponenteMapaId(), e.getEnunciado());
     }
 }
