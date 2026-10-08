@@ -2,6 +2,8 @@ package co.eci.c15.gameplay.domain;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -21,6 +23,7 @@ public final class AcertijoEnPartida {
     private Estado estado = Estado.PENDIENTE;
     private String poseedor;
     private Instant bloqueadoEn;
+    private final List<String> entrada = new ArrayList<>();
 
     public AcertijoEnPartida(String matchId, String equipoId, String componenteMapaId) {
         this.matchId = Objects.requireNonNull(matchId);
@@ -43,18 +46,50 @@ public final class AcertijoEnPartida {
             throw new AcertijoBloqueadoException(componenteMapaId);
         }
         String anterior = poseedor != null && !poseedor.equals(userId) ? poseedor : null;
+        if (poseedor == null || anterior != null) entrada.clear();
         poseedor = userId;
         bloqueadoEn = ahora;
         return Optional.ofNullable(anterior);
     }
 
-    /** Libera el bloqueo solo si lo tiene ese jugador. */
+    /** Libera el bloqueo solo si lo tiene ese jugador; lo que habia ingresado se descarta. */
     public synchronized void liberar(String userId) {
         if (userId != null && userId.equals(poseedor)) {
             poseedor = null;
             bloqueadoEn = null;
+            entrada.clear();
         }
     }
+
+    /**
+     * Registra un click del jugador que tiene el acertijo abierto. Verificar el bloqueo y
+     * agregar la entrada es un solo paso atomico.
+     *
+     * @return la entrada acumulada tras este click
+     */
+    public synchronized List<String> registrarClick(String userId, String valor) {
+        Objects.requireNonNull(userId);
+        Objects.requireNonNull(valor);
+        if (estado == Estado.RESUELTO) throw new AcertijoYaResueltoException(componenteMapaId);
+        verificarPoseedor(userId);
+        entrada.add(valor);
+        return List.copyOf(entrada);
+    }
+
+    /** Borra lo ingresado hasta ahora; solo lo puede hacer quien tiene el acertijo abierto. */
+    public synchronized void reiniciarEntrada(String userId) {
+        if (estado == Estado.RESUELTO) throw new AcertijoYaResueltoException(componenteMapaId);
+        verificarPoseedor(userId);
+        entrada.clear();
+    }
+
+    /** Un companero que lo tiene abierto -> "en uso"; nadie lo tiene abierto -> primero hay que abrirlo. */
+    private void verificarPoseedor(String userId) {
+        if (poseedor != null && !poseedor.equals(userId)) throw new AcertijoBloqueadoException(componenteMapaId);
+        if (poseedor == null) throw new AcertijoNoAbiertoException(componenteMapaId, userId);
+    }
+
+    public synchronized List<String> getEntrada() { return List.copyOf(entrada); }
 
     public synchronized void marcarResuelto() {
         estado = Estado.RESUELTO;
