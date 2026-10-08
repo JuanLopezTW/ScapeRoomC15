@@ -40,9 +40,9 @@ class UnirseSalaUseCaseTest {
 
     @Test
     void salaLlenaLanzaExcepcion() {
-        sala.configurar("anfitrion-1", 1, 1);
-        sala.unirJugador("user-1");
-        assertThrows(SalaLlenaException.class, () -> useCase.ejecutar(sala.getId(), "user-2"));
+        sala.configurar("anfitrion-1", 2, 2);
+        for (int i = 1; i <= 4; i++) sala.unirJugador("user-" + i);
+        assertThrows(SalaLlenaException.class, () -> useCase.ejecutar(sala.getId(), "user-5"));
         verify(repo, never()).save(any());
     }
 

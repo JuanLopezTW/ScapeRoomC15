@@ -3,6 +3,9 @@ package co.eci.c15.salas.infrastructure.persistence;
 import co.eci.c15.salas.domain.Sala;
 import jakarta.persistence.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "salas")
 class SalaJpa {
@@ -15,18 +18,33 @@ class SalaJpa {
     private String anfitrionId;
     @Enumerated(EnumType.STRING)
     private Sala.Estado estado;
+    @Column(nullable = false)
+    private int numEquipos;
+    @Column(nullable = false)
+    private int jugadoresPorEquipo;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "sala_jugadores", joinColumns = @JoinColumn(name = "sala_id"))
+    @Column(name = "user_id", nullable = false)
+    private Set<String> jugadores = new HashSet<>();
 
     protected SalaJpa() {}
 
-    SalaJpa(String id, String nombre, String anfitrionId, Sala.Estado estado) {
+    SalaJpa(String id, String nombre, String anfitrionId, Sala.Estado estado,
+            int numEquipos, int jugadoresPorEquipo, Set<String> jugadores) {
         this.id = id;
         this.nombre = nombre;
         this.anfitrionId = anfitrionId;
         this.estado = estado;
+        this.numEquipos = numEquipos;
+        this.jugadoresPorEquipo = jugadoresPorEquipo;
+        this.jugadores = new HashSet<>(jugadores);
     }
 
     String getId() { return id; }
     String getNombre() { return nombre; }
     String getAnfitrionId() { return anfitrionId; }
     Sala.Estado getEstado() { return estado; }
+    int getNumEquipos() { return numEquipos; }
+    int getJugadoresPorEquipo() { return jugadoresPorEquipo; }
+    Set<String> getJugadores() { return jugadores; }
 }

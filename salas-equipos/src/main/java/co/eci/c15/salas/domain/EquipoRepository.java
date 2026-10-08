@@ -6,5 +6,7 @@ import java.util.Optional;
 public interface EquipoRepository {
     Equipo save(Equipo equipo);
     Optional<Equipo> findById(String id);
+    /** Equipos de la sala ordenados por número. */
     List<Equipo> findBySalaId(String salaId);
+    void delete(String id);
 }

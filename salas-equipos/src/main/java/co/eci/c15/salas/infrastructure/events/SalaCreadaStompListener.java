@@ -1,6 +1,7 @@
 package co.eci.c15.salas.infrastructure.events;
 
 import co.eci.c15.salas.application.ListarSalasUseCase;
+import co.eci.c15.salas.application.SalaActualizadaEvent;
 import co.eci.c15.salas.application.SalaCreadaEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

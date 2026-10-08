@@ -2,6 +2,7 @@ package co.eci.c15.salas.infrastructure.web;
 
 import co.eci.c15.salas.application.ConfigurarSalaUseCase;
 import co.eci.c15.salas.application.CrearSalaUseCase;
+import co.eci.c15.salas.application.ListarEquiposUseCase;
 import co.eci.c15.salas.application.ListarSalasUseCase;
 import co.eci.c15.salas.application.SalaDto;
 import co.eci.c15.salas.application.UnirseSalaUseCase;
@@ -24,13 +25,15 @@ public class SalaController {
     private final ListarSalasUseCase listar;
     private final ConfigurarSalaUseCase configurar;
     private final UnirseSalaUseCase unirse;
+    private final ListarEquiposUseCase listarEquipos;
 
-    public SalaController(CrearSalaUseCase crear, ListarSalasUseCase listar,
-                          ConfigurarSalaUseCase configurar, UnirseSalaUseCase unirse) {
+    public SalaController(CrearSalaUseCase crear, ListarSalasUseCase listar, ConfigurarSalaUseCase configurar,
+                          UnirseSalaUseCase unirse, ListarEquiposUseCase listarEquipos) {
         this.crear = crear;
         this.listar = listar;
         this.configurar = configurar;
         this.unirse = unirse;
+        this.listarEquipos = listarEquipos;
     }
 
     @GetMapping
@@ -48,11 +51,11 @@ public class SalaController {
     }
 
     @PatchMapping("/{salaId}/configuracion")
-    public ResponseEntity<?> configurar(@PathVariable String salaId, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> configurar(@PathVariable("salaId") String salaId, @RequestBody Map<String, Object> body) {
         try {
             return ResponseEntity.ok(configurar.ejecutar(salaId, (String) body.get("solicitanteId"),
-                    (int) body.get("numEquipos"), (int) body.get("jugadoresPorEquipo")));
-        } catch (NoEsAnfitrionException e) {
+                    entero(body, "numEquipos"), entero(body, "jugadoresPorEquipo")));
+        } catch (NoEsAnfitrionException | PartidaYaIniciadaException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
         } catch (ConfiguracionInvalidaException | IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -60,7 +63,7 @@ public class SalaController {
     }
 
     @PostMapping("/{salaId}/jugadores")
-    public ResponseEntity<?> unirse(@PathVariable String salaId, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> unirse(@PathVariable("salaId") String salaId, @RequestBody Map<String, String> body) {
         try {
             return ResponseEntity.ok(unirse.ejecutar(salaId, body.get("userId")));
         } catch (SalaLlenaException e) {
@@ -70,5 +73,19 @@ public class SalaController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/{salaId}/equipos")
+    public ResponseEntity<?> equipos(@PathVariable("salaId") String salaId) {
+        try {
+            return ResponseEntity.ok(listarEquipos.ejecutar(salaId));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    private static int entero(Map<String, Object> body, String campo) {
+        if (body.get(campo) instanceof Number n) return n.intValue();
+        throw new IllegalArgumentException("El campo " + campo + " es obligatorio y debe ser numérico");
     }
 }
