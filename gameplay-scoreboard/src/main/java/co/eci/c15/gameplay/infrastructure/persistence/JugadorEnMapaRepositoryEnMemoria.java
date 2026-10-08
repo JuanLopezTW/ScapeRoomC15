@@ -33,4 +33,10 @@ public class JugadorEnMapaRepositoryEnMemoria implements JugadorEnMapaRepository
                 .putIfAbsent(jugador.getUserId(), jugador);
         return existente != null ? existente : jugador;
     }
+
+    @Override
+    public Optional<JugadorEnMapa> remove(String matchId, String userId) {
+        Map<String, JugadorEnMapa> partida = porPartida.get(matchId);
+        return partida == null ? Optional.empty() : Optional.ofNullable(partida.remove(userId));
+    }
 }
