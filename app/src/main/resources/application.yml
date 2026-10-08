@@ -2,7 +2,7 @@ spring:
   application:
     name: escaperoom-c15
   datasource:
-    url: jdbc:postgresql://localhost:5432/escaperoom_c15
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/escaperoom_c15
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
   jpa:

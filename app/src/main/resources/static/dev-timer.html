@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba cronometro HU-34.5</title>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        #time { font-size: 4rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+<p>
+    Partida: <input id="match" value="m1">
+    <button onclick="connect()">Conectar</button>
+    <button onclick="start()">Iniciar (60 s)</button>
+</p>
+<div id="time">--:--</div>
+<p id="status"></p>
+
+<script>
+    let client;
+    const fmt = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+
+    function render(state) {
+        document.getElementById("time").textContent = fmt(state.remainingSeconds);
+        document.getElementById("status").textContent = state.timeUp ? "Tiempo agotado" : "";
+    }
+
+    function connect() {
+        const id = document.getElementById("match").value;
+        if (client) client.deactivate();
+        client = new StompJs.Client({ brokerURL: `ws://${location.host}/ws` });
+        client.onConnect = async () => {
+            client.subscribe(`/topic/match/${id}/timer`, msg => render(JSON.parse(msg.body)));
+            const res = await fetch(`/api/matches/${id}/timer`);   // sincronizacion inicial
+            if (res.ok) render(await res.json());
+        };
+        client.activate();
+    }
+
+    async function start() {
+        const id = document.getElementById("match").value;
+        await fetch(`/dev/matches/${id}/start?seconds=60`, { method: "POST" });
+    }
+</script>
+</body>
+</html>
