@@ -29,6 +29,6 @@ public class UsuarioRepositoryAdapter implements UsuarioRepository {
     @Override
     public Optional<Usuario> findByUsername(String username) {
         return jpa.findByUsername(username)
-                .map(e -> Usuario.crear(e.getUsername()));
+                .map(e -> Usuario.reconstituir(e.getId(), e.getUsername()));
     }
 }

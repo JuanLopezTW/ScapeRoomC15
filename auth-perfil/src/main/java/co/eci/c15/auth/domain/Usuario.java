@@ -18,6 +18,11 @@ public final class Usuario {
         return new Usuario(UUID.randomUUID().toString(), username);
     }
 
+    /** Reconstruye un usuario ya existente (desde persistencia) conservando su id. */
+    public static Usuario reconstituir(String id, String username) {
+        return new Usuario(Objects.requireNonNull(id), Objects.requireNonNull(username));
+    }
+
     public static void validarUsername(String username) {
         if (username == null || username.isBlank()) {
             throw new UsernameInvalidoException("El nombre de usuario no puede estar vacío");
