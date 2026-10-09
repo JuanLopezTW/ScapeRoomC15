@@ -8,6 +8,7 @@ import co.eci.c15.salas.domain.Sala;
 import co.eci.c15.salas.domain.SalaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
 
@@ -18,6 +19,7 @@ class UnirseEquipoUseCaseTest {
 
     private EquiposEnMemoria equipos;
     private SalaRepository salas;
+    private ApplicationEventPublisher events;
     private UnirseEquipoUseCase useCase;
     private Sala sala;
     private Equipo equipo1;
@@ -27,7 +29,8 @@ class UnirseEquipoUseCaseTest {
     void setUp() {
         equipos = new EquiposEnMemoria();
         salas = mock(SalaRepository.class);
-        useCase = new UnirseEquipoUseCase(equipos, salas);
+        events = mock(ApplicationEventPublisher.class);
+        useCase = new UnirseEquipoUseCase(equipos, salas, events);
         sala = Sala.crear("Sala 1", "anfitrion-1");
         for (int i = 1; i <= 4; i++) sala.unirJugador("user-" + i);
         when(salas.findById(sala.getId())).thenReturn(Optional.of(sala));
@@ -39,6 +42,15 @@ class UnirseEquipoUseCaseTest {
     void unionExitosa() {
         EquipoDto dto = useCase.ejecutar(equipo1.getId(), "user-1");
         assertTrue(dto.miembros().contains("user-1"));
+        verify(events).publishEvent(new SalaActualizadaEvent(sala.getId()));
+    }
+
+    @Test
+    void siYaEstaEnElEquipoNoPublicaEvento() {
+        useCase.ejecutar(equipo1.getId(), "user-1");
+        clearInvocations(events);
+        useCase.ejecutar(equipo1.getId(), "user-1");
+        verifyNoInteractions(events);
     }
 
     @Test
@@ -58,6 +70,7 @@ class UnirseEquipoUseCaseTest {
     void jugadorFueraDeLaSalaNoPuedeUnirse() {
         assertThrows(JugadorNoEnSalaException.class, () -> useCase.ejecutar(equipo1.getId(), "intruso"));
         assertTrue(equipo1.isVacio());
+        verifyNoInteractions(events);
     }
 
     @Test
