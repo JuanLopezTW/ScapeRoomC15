@@ -6,6 +6,7 @@ import co.eci.c15.salas.domain.JugadorNoEnSalaException;
 import co.eci.c15.salas.domain.PartidaYaIniciadaException;
 import co.eci.c15.salas.domain.Sala;
 import co.eci.c15.salas.domain.SalaRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,10 +15,12 @@ public class UnirseEquipoUseCase {
 
     private final EquipoRepository equipos;
     private final SalaRepository salas;
+    private final ApplicationEventPublisher events;
 
-    public UnirseEquipoUseCase(EquipoRepository equipos, SalaRepository salas) {
+    public UnirseEquipoUseCase(EquipoRepository equipos, SalaRepository salas, ApplicationEventPublisher events) {
         this.equipos = equipos;
         this.salas = salas;
+        this.events = events;
     }
 
     /**
@@ -42,6 +45,7 @@ public class UnirseEquipoUseCase {
             }
         }
         equipos.save(equipo);
+        events.publishEvent(new SalaActualizadaEvent(sala.getId()));
         return EquipoDto.from(equipo);
     }
 }

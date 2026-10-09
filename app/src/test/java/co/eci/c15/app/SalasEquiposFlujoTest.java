@@ -1,5 +1,7 @@
 package co.eci.c15.app;
 
+import co.eci.c15.salas.domain.Sala;
+import co.eci.c15.salas.domain.SalaRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,9 @@ class SalasEquiposFlujoTest {
 
     @Autowired
     private ObjectMapper json;
+
+    @Autowired
+    private SalaRepository salas;
 
     @Test
     void crearSalaConfigurarYUnirseAEquipo() throws Exception {
@@ -77,6 +82,61 @@ class SalasEquiposFlujoTest {
     void equiposDeSalaInexistenteDevuelve404() throws Exception {
         mvc.perform(get("/api/salas/{id}/equipos", "no-existe"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void detalleDeLaSalaMuestraEquiposYJugadoresSinEquipo() throws Exception {
+        String salaId = crearSala("Sala lobby");
+        unirseASala(salaId, "host");
+        unirseASala(salaId, "ana");
+        String equipo1 = leer(mvc.perform(get("/api/salas/{id}/equipos", salaId))
+                .andReturn().getResponse().getContentAsString()).get(0).get("id").asText();
+        mvc.perform(post("/api/equipos/{id}/miembros", equipo1).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":\"host\"}"))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/salas/{id}", salaId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(salaId))
+                .andExpect(jsonPath("$.nombre").value("Sala lobby"))
+                .andExpect(jsonPath("$.estado").value("DISPONIBLE"))
+                .andExpect(jsonPath("$.jugadores", hasSize(2)))
+                .andExpect(jsonPath("$.sinEquipo[0]").value("ana"))
+                .andExpect(jsonPath("$.equipos", hasSize(2)))
+                .andExpect(jsonPath("$.equipos[0].miembros[0]").value("host"))
+                .andExpect(jsonPath("$.equipos[1].miembros", hasSize(0)));
+    }
+
+    @Test
+    void detalleDeSalaInexistenteDevuelve404() throws Exception {
+        mvc.perform(get("/api/salas/{id}", "no-existe"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Sala no encontrada: no-existe"));
+    }
+
+    @Test
+    void detalleDeSalaConPartidaIniciadaDevuelve409() throws Exception {
+        String salaId = crearSala("Sala cerrada");
+        Sala sala = salas.findById(salaId).orElseThrow();
+        sala.iniciarPartida();
+        salas.save(sala);
+
+        mvc.perform(get("/api/salas/{id}", salaId))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").exists());
+    }
+
+    private String crearSala(String nombre) throws Exception {
+        return leer(mvc.perform(post("/api/salas").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"" + nombre + "\",\"anfitrionId\":\"host\"}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString()).get("id").asText();
+    }
+
+    private void unirseASala(String salaId, String userId) throws Exception {
+        mvc.perform(post("/api/salas/{id}/jugadores", salaId).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":\"" + userId + "\"}"))
+                .andExpect(status().isOk());
     }
 
     private JsonNode leer(String body) throws Exception {
