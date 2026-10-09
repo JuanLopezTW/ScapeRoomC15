@@ -126,6 +126,55 @@ class SalasEquiposFlujoTest {
                 .andExpect(jsonPath("$.error").exists());
     }
 
+    @Test
+    void jugadoresMarcanListoYElEquipoQuedaListo() throws Exception {
+        String salaId = crearSala("Sala listo");
+        String equipo1 = leer(mvc.perform(get("/api/salas/{id}/equipos", salaId))
+                .andReturn().getResponse().getContentAsString()).get(0).get("id").asText();
+        for (String u : new String[]{"ana", "beto", "caro"}) unirseASala(salaId, u);
+        for (String u : new String[]{"ana", "beto"}) {
+            mvc.perform(post("/api/equipos/{id}/miembros", equipo1).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"userId\":\"" + u + "\"}"))
+                    .andExpect(status().isOk());
+        }
+
+        mvc.perform(post("/api/salas/{id}/listo", salaId).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":\"ana\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.equipos[0].listos[0]").value("ana"))
+                .andExpect(jsonPath("$.equipos[0].listo").value(false));
+
+        mvc.perform(post("/api/salas/{id}/listo", salaId).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":\"beto\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.equipos[0].listo").value(true));
+
+        mvc.perform(get("/api/salas/{id}", salaId))
+                .andExpect(jsonPath("$.equipos[0].listos", hasSize(2)))
+                .andExpect(jsonPath("$.equipos[0].listo").value(true));
+
+        mvc.perform(delete("/api/salas/{id}/listo", salaId).param("userId", "beto"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.equipos[0].listo").value(false));
+    }
+
+    @Test
+    void listoSinEquipoDevuelve409YSalaInexistente404() throws Exception {
+        String salaId = crearSala("Sala sin equipo");
+        unirseASala(salaId, "ana");
+
+        mvc.perform(post("/api/salas/{id}/listo", salaId).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":\"ana\"}"))
+                .andExpect(status().isConflict());
+
+        mvc.perform(post("/api/salas/{id}/listo", "no-existe").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":\"ana\"}"))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(delete("/api/salas/{id}/listo", salaId))
+                .andExpect(status().isBadRequest());
+    }
+
     private String crearSala(String nombre) throws Exception {
         return leer(mvc.perform(post("/api/salas").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nombre\":\"" + nombre + "\",\"anfitrionId\":\"host\"}"))
