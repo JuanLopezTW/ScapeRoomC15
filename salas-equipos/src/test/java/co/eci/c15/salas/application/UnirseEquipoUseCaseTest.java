@@ -88,6 +88,17 @@ class UnirseEquipoUseCaseTest {
     }
 
     @Test
+    void cambiarDeEquipoQuitaElListo() {
+        useCase.ejecutar(equipo1.getId(), "user-1");
+        equipo1.marcarListo("user-1");
+
+        useCase.ejecutar(equipo2.getId(), "user-1");
+
+        assertFalse(equipo1.isMiembroListo("user-1"));
+        assertFalse(equipo2.isMiembroListo("user-1"));
+    }
+
+    @Test
     void siElNuevoEquipoEstaLlenoSeQuedaEnElAnterior() {
         useCase.ejecutar(equipo1.getId(), "user-1");
         useCase.ejecutar(equipo2.getId(), "user-2");
