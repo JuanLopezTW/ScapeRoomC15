@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Duration;
 
 /**
- * TEMPORAL: simula el arranque de partida mientras no exista la HU-64.4.
- * Cuando exista MatchStartedEvent, se reemplaza por un @EventListener y se borra esta clase.
+ * Solo para desarrollo: arranca un cronometro sin armar una sala. En el juego real el
+ * cronometro lo arranca MatchTimerListener con PartidaIniciadaEvent (HU-64.4).
  */
 @RestController
 @RequestMapping("/dev/matches")
