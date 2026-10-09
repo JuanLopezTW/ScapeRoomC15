@@ -2,6 +2,7 @@ package co.eci.c15.gameplay.infrastructure.web;
 
 import co.eci.c15.gameplay.application.ChallengeState;
 import co.eci.c15.gameplay.application.HeroVillainChallengeService;
+import co.eci.c15.gameplay.application.MatchResultService;
 import co.eci.c15.gameplay.domain.ChallengeNotActiveException;
 import co.eci.c15.gameplay.domain.NotInChallengeException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,13 +28,15 @@ class ChallengeWebTest {
 
     private HeroVillainChallengeService service;
     private MockMvc mvc;
-    private ChallengeFreezeInterceptor interceptor;
+    private MatchResultService results;
+    private MapFreezeInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
         service = mock(HeroVillainChallengeService.class);
         mvc = MockMvcBuilders.standaloneSetup(new ChallengeController(service)).build();
-        interceptor = new ChallengeFreezeInterceptor(service, new ObjectMapper());
+        results = mock(MatchResultService.class);
+        interceptor = new MapFreezeInterceptor(service, results, new ObjectMapper());
     }
 
     private static String click(String userId) {
@@ -101,6 +104,17 @@ class ChallengeWebTest {
         when(service.isActive("m1")).thenReturn(false);
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/partidas/m1/acertijos/a1/bloqueo");
         assertTrue(interceptor.preHandle(request, new MockHttpServletResponse(), new Object()));
+    }
+
+    @Test
+    void finishedMatchRejectsPostsWith409() throws Exception {
+        when(results.isFinished("m1")).thenReturn(true);
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/partidas/m1/objetos/llave-1/recoleccion");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        assertFalse(interceptor.preHandle(request, response, new Object()));
+        assertEquals(409, response.getStatus());
+        assertTrue(response.getContentAsString().contains("termino"));
     }
 
     @Test
