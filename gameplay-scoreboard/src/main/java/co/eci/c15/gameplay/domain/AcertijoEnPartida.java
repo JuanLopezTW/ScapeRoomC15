@@ -17,6 +17,8 @@ public final class AcertijoEnPartida {
 
     public enum Estado { PENDIENTE, RESUELTO }
 
+    public enum Resultado { CORRECTA, INCORRECTA }
+
     private final String matchId;
     private final String equipoId;
     private final String componenteMapaId;
@@ -81,6 +83,27 @@ public final class AcertijoEnPartida {
         if (estado == Estado.RESUELTO) throw new AcertijoYaResueltoException(componenteMapaId);
         verificarPoseedor(userId);
         entrada.clear();
+    }
+
+    /**
+     * Evalua la solucion de quien tiene el acertijo abierto, en un solo paso atomico: si es
+     * correcta el acertijo queda resuelto (y se libera); si no, se descarta lo ingresado para
+     * que pueda intentarlo de nuevo. Con varios intentos simultaneos solo uno puede resolverlo.
+     *
+     * @param respuesta lo que envia el jugador; si es null se evalua lo ingresado con clicks
+     */
+    public synchronized Resultado intentarResolver(String userId, List<String> respuesta,
+                                                   Predicate<List<String>> esCorrecta) {
+        Objects.requireNonNull(userId);
+        if (estado == Estado.RESUELTO) throw new AcertijoYaResueltoException(componenteMapaId);
+        verificarPoseedor(userId);
+        List<String> candidata = respuesta != null ? List.copyOf(respuesta) : List.copyOf(entrada);
+        if (esCorrecta.test(candidata)) {
+            marcarResuelto();
+            return Resultado.CORRECTA;
+        }
+        entrada.clear();
+        return Resultado.INCORRECTA;
     }
 
     /** Un companero que lo tiene abierto -> "en uso"; nadie lo tiene abierto -> primero hay que abrirlo. */
