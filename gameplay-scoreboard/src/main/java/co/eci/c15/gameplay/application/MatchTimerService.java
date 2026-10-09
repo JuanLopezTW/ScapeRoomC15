@@ -55,6 +55,19 @@ public class MatchTimerService {
         return created;
     }
 
+    /** Stops the timer without publishing {@link TimeUpEvent} (the match ended early). */
+    public boolean stop(String matchId) {
+        MatchTimer timer = timers.remove(matchId);
+        if (timer == null) {
+            return false;
+        }
+        ScheduledFuture<?> task = tasks.remove(matchId);
+        if (task != null) {
+            task.cancel(false);
+        }
+        return true;
+    }
+
     public Optional<TimerState> find(String matchId) {
         return Optional.ofNullable(timers.get(matchId))
                 .map(timer -> stateOf(timer, clock.instant()));

@@ -1,7 +1,8 @@
 package co.eci.c15.gameplay.infrastructure.config;
 
 import co.eci.c15.gameplay.application.HeroVillainChallengeService;
-import co.eci.c15.gameplay.infrastructure.web.ChallengeFreezeInterceptor;
+import co.eci.c15.gameplay.application.MatchResultService;
+import co.eci.c15.gameplay.infrastructure.web.MapFreezeInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,10 +17,13 @@ import java.util.random.RandomGenerator;
 public class ChallengeConfig implements WebMvcConfigurer {
 
     private final HeroVillainChallengeService challenges;
+    private final MatchResultService results;
     private final ObjectMapper json;
 
-    public ChallengeConfig(@Lazy HeroVillainChallengeService challenges, ObjectMapper json) {
+    public ChallengeConfig(@Lazy HeroVillainChallengeService challenges, @Lazy MatchResultService results,
+                           ObjectMapper json) {
         this.challenges = challenges;
+        this.results = results;
         this.json = json;
     }
 
@@ -30,7 +34,7 @@ public class ChallengeConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new ChallengeFreezeInterceptor(challenges, json))
-                .addPathPatterns(ChallengeFreezeInterceptor.FROZEN_PATHS);
+        registry.addInterceptor(new MapFreezeInterceptor(challenges, results, json))
+                .addPathPatterns(MapFreezeInterceptor.FROZEN_PATHS);
     }
 }
