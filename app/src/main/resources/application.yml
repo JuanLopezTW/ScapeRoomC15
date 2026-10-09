@@ -17,3 +17,5 @@ c15:
   partida:
     duracion: ${PARTIDA_DURACION:30m}
     cuenta-regresiva: 5s
+  reto:
+    duracion: ${RETO_DURACION:20s}
