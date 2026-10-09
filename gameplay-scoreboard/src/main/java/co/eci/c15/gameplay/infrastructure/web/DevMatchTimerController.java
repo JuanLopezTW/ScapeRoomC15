@@ -1,0 +1,33 @@
+package co.eci.c15.gameplay.infrastructure.web;
+
+import co.eci.c15.gameplay.application.MatchTimerService;
+import co.eci.c15.gameplay.application.TimerState;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.Duration;
+
+/**
+ * TEMPORAL: simula el arranque de partida mientras no exista la HU-64.4.
+ * Cuando exista MatchStartedEvent, se reemplaza por un @EventListener y se borra esta clase.
+ */
+@RestController
+@RequestMapping("/dev/matches")
+public class DevMatchTimerController {
+
+    private final MatchTimerService timers;
+
+    public DevMatchTimerController(MatchTimerService timers) {
+        this.timers = timers;
+    }
+
+    @PostMapping("/{matchId}/start")
+    public TimerState start(@PathVariable String matchId,
+                            @RequestParam(defaultValue = "60") long seconds) {
+        timers.start(matchId, Duration.ofSeconds(seconds));
+        return timers.find(matchId).orElse(new TimerState(matchId, 0, true));
+    }
+}
