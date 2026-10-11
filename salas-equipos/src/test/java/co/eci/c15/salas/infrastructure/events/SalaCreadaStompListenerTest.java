@@ -31,12 +31,12 @@ class SalaCreadaStompListenerTest {
     @Test
     void alCrearUnaSalaPublicaElCatalogoCompleto() {
         listener.onSalaCreada(new SalaCreadaEvent("s1", "Sala"));
-        verify(messaging).convertAndSend("/topic/rooms", catalogo);
+        verify(messaging).convertAndSend("/topic/salas", catalogo);
     }
 
     @Test
     void alActualizarUnaSalaPublicaElCatalogoCompleto() {
         listener.onSalaActualizada(new SalaActualizadaEvent("s1"));
-        verify(messaging).convertAndSend("/topic/rooms", catalogo);
+        verify(messaging).convertAndSend("/topic/salas", catalogo);
     }
 }

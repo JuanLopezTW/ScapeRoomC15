@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-/** Hero vs Executioner challenge (HU-44.5). Live scores go to /topic/match/{matchId}/challenge. */
+/** Hero vs Executioner challenge (HU-44.5). Live scores go to /topic/partidas/{matchId}/reto. */
 @RestController
 @RequestMapping("/api/partidas/{matchId}/reto")
 public class ChallengeController {

@@ -41,9 +41,9 @@ class PartidaInicioFlujoTest {
         await().atMost(Duration.ofSeconds(10)).untilAsserted(() ->
                 mvc.perform(get("/api/salas/{id}", salaId)).andExpect(status().isConflict()));
 
-        mvc.perform(get("/api/matches/{id}/timer", salaId))
+        mvc.perform(get("/api/partidas/{id}/cronometro", salaId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.remainingSeconds", greaterThan(1700)));
+                .andExpect(jsonPath("$.segundosRestantes", greaterThan(1700)));
         mvc.perform(get("/api/partidas/{id}/jugadores/{u}/rol", salaId, "ana"))
                 .andExpect(status().isOk());
         mvc.perform(post("/api/salas/{id}/listo", salaId).contentType(MediaType.APPLICATION_JSON)
@@ -65,7 +65,7 @@ class PartidaInicioFlujoTest {
         mvc.perform(get("/api/salas/{id}", salaId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("DISPONIBLE"));
-        mvc.perform(get("/api/matches/{id}/timer", salaId))
+        mvc.perform(get("/api/partidas/{id}/cronometro", salaId))
                 .andExpect(status().isNotFound());
     }
 

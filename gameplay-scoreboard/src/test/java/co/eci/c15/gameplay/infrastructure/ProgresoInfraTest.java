@@ -64,7 +64,7 @@ class ProgresoInfraTest {
 
         new StompProgresoNotifier(messaging).notificar(dto);
 
-        verify(messaging).convertAndSend("/topic/match/p1/progress", dto);
+        verify(messaging).convertAndSend("/topic/partidas/p1/progreso", dto);
         verifyNoMoreInteractions(messaging);
     }
 

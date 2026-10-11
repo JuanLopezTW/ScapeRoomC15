@@ -51,7 +51,7 @@ class GanarPartidaFlujoTest {
         mvc.perform(get("/api/partidas/{m}/resultado", matchId)).andExpect(status().isNotFound());
 
         // El equipo B gana el reto: solo hace click su heroe
-        mvc.perform(post("/dev/matches/{m}/challenge/start", matchId)).andExpect(status().isOk());
+        mvc.perform(post("/dev/partidas/{m}/reto/inicio", matchId)).andExpect(status().isOk());
         String heroeB = heroeDe(matchId, equipoB);
         for (int i = 0; i < 5; i++) {
             mvc.perform(post("/api/partidas/{m}/reto/clicks", matchId).contentType(MediaType.APPLICATION_JSON)
@@ -68,15 +68,15 @@ class GanarPartidaFlujoTest {
 
         mvc.perform(get("/api/partidas/{m}/resultado", matchId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.reason").value("ALL_PUZZLES_SOLVED"))
-                .andExpect(jsonPath("$.winnerTeamId").value(equipoA))
-                .andExpect(jsonPath("$.standings[0].teamId").value(equipoA))
-                .andExpect(jsonPath("$.standings[0].puzzlesSolved").value(3))
-                .andExpect(jsonPath("$.standings[0].score").value(3))
-                .andExpect(jsonPath("$.standings[1].challengesWon").value(1))
-                .andExpect(jsonPath("$.standings[1].score").value(2));
+                .andExpect(jsonPath("$.motivo").value("ACERTIJOS_COMPLETOS"))
+                .andExpect(jsonPath("$.equipoGanadorId").value(equipoA))
+                .andExpect(jsonPath("$.clasificacion[0].equipoId").value(equipoA))
+                .andExpect(jsonPath("$.clasificacion[0].acertijosResueltos").value(3))
+                .andExpect(jsonPath("$.clasificacion[0].puntaje").value(3))
+                .andExpect(jsonPath("$.clasificacion[1].retosGanados").value(1))
+                .andExpect(jsonPath("$.clasificacion[1].puntaje").value(2));
 
-        mvc.perform(get("/api/matches/{m}/timer", matchId)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/partidas/{m}/cronometro", matchId)).andExpect(status().isNotFound());
         mvc.perform(post("/api/partidas/{m}/jugadores/{u}/movimiento", matchId, "ana")
                         .contentType(MediaType.APPLICATION_JSON).content("{\"x\":1,\"y\":1}"))
                 .andExpect(status().isConflict())
@@ -94,10 +94,10 @@ class GanarPartidaFlujoTest {
 
         mvc.perform(get("/api/partidas/{m}/resultado", matchId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.reason").value("TIME_UP"))
-                .andExpect(jsonPath("$.draw").value(true))
-                .andExpect(jsonPath("$.winnerTeamId").doesNotExist())
-                .andExpect(jsonPath("$.tiedTeamIds", hasSize(2)));
+                .andExpect(jsonPath("$.motivo").value("TIEMPO_AGOTADO"))
+                .andExpect(jsonPath("$.empate").value(true))
+                .andExpect(jsonPath("$.equipoGanadorId").doesNotExist())
+                .andExpect(jsonPath("$.equiposEmpatados", hasSize(2)));
     }
 
     private String heroeDe(String matchId, String equipoId) throws Exception {

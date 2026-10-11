@@ -50,10 +50,10 @@ class RetoHeroeVerdugoFlujoTest {
         Map<String, String> teamOf = new HashMap<>();
         String matchId = partidaIniciada(teamOf);
 
-        mvc.perform(post("/dev/matches/{id}/challenge/start", matchId))
+        mvc.perform(post("/dev/partidas/{id}/reto/inicio", matchId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("RUNNING"));
-        mvc.perform(post("/dev/matches/{id}/challenge/start", matchId))
+                .andExpect(jsonPath("$.estado").value("EN_CURSO"));
+        mvc.perform(post("/dev/partidas/{id}/reto/inicio", matchId))
                 .andExpect(status().isConflict());
 
         mvc.perform(post("/api/partidas/{m}/jugadores/{u}/movimiento", matchId, "ana")
@@ -112,7 +112,7 @@ class RetoHeroeVerdugoFlujoTest {
 
     @Test
     void sinPartidaNoHayReto() throws Exception {
-        mvc.perform(post("/dev/matches/{id}/challenge/start", "no-existe"))
+        mvc.perform(post("/dev/partidas/{id}/reto/inicio", "no-existe"))
                 .andExpect(status().isConflict());
         mvc.perform(get("/api/partidas/{m}/reto", "no-existe"))
                 .andExpect(status().isNotFound());

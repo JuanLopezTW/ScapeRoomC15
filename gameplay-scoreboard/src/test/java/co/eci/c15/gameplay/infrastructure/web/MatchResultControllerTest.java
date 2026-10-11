@@ -27,10 +27,10 @@ class MatchResultControllerTest {
 
         mvc.perform(get("/api/partidas/m1/resultado"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.winnerTeamId").value("A"))
-                .andExpect(jsonPath("$.reason").value("TIME_UP"))
-                .andExpect(jsonPath("$.draw").value(false))
-                .andExpect(jsonPath("$.standings[0].score").value(3));
+                .andExpect(jsonPath("$.equipoGanadorId").value("A"))
+                .andExpect(jsonPath("$.motivo").value("TIEMPO_AGOTADO"))
+                .andExpect(jsonPath("$.empate").value(false))
+                .andExpect(jsonPath("$.clasificacion[0].puntaje").value(3));
     }
 
     @Test

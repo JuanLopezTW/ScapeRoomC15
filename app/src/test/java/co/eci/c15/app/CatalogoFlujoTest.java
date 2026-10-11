@@ -70,7 +70,7 @@ class CatalogoFlujoTest {
     void crearYUnirsePublicanElCatalogoActualizadoEnTiempoReal() throws Exception {
         String salaId = crearSala("Sala en vivo");
         ArgumentCaptor<Object> enviado = ArgumentCaptor.forClass(Object.class);
-        verify(messaging, atLeastOnce()).convertAndSend(eq("/topic/rooms"), enviado.capture());
+        verify(messaging, atLeastOnce()).convertAndSend(eq("/topic/salas"), enviado.capture());
         assertEquals(0, buscar((List<SalaDto>) enviado.getValue(), salaId).jugadoresActuales());
 
         clearInvocations(messaging);
@@ -78,7 +78,7 @@ class CatalogoFlujoTest {
                         .content("{\"userId\":\"beto\"}"))
                 .andExpect(status().isOk());
 
-        verify(messaging, atLeastOnce()).convertAndSend(eq("/topic/rooms"), enviado.capture());
+        verify(messaging, atLeastOnce()).convertAndSend(eq("/topic/salas"), enviado.capture());
         assertEquals(1, buscar((List<SalaDto>) enviado.getValue(), salaId).jugadoresActuales());
     }
 

@@ -16,6 +16,6 @@ public class StompMatchResultNotifier implements MatchResultNotifier {
 
     @Override
     public void notify(MatchResult result) {
-        messaging.convertAndSend("/topic/match/" + result.matchId() + "/result", result);
+        messaging.convertAndSend("/topic/partidas/" + result.matchId() + "/resultado", result);
     }
 }

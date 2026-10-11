@@ -16,6 +16,6 @@ public class StompChallengeNotifier implements ChallengeNotifier {
 
     @Override
     public void notify(ChallengeState state) {
-        messaging.convertAndSend("/topic/match/" + state.matchId() + "/challenge", state);
+        messaging.convertAndSend("/topic/partidas/" + state.matchId() + "/reto", state);
     }
 }
