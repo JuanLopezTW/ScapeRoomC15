@@ -16,6 +16,6 @@ public class StompRolesNotifier implements RolesNotifier {
 
     @Override
     public void notificar(AsignacionRolesDto asignacion) {
-        messaging.convertAndSend("/topic/match/" + asignacion.matchId() + "/team/" + asignacion.equipoId() + "/roles", asignacion);
+        messaging.convertAndSend("/topic/partidas/" + asignacion.matchId() + "/equipos/" + asignacion.equipoId() + "/roles", asignacion);
     }
 }

@@ -15,7 +15,7 @@ import java.time.Duration;
  * cronometro lo arranca MatchTimerListener con PartidaIniciadaEvent (HU-64.4).
  */
 @RestController
-@RequestMapping("/dev/matches")
+@RequestMapping("/dev/partidas")
 public class DevMatchTimerController {
 
     private final MatchTimerService timers;
@@ -24,9 +24,9 @@ public class DevMatchTimerController {
         this.timers = timers;
     }
 
-    @PostMapping("/{matchId}/start")
+    @PostMapping("/{matchId}/inicio")
     public TimerState start(@PathVariable String matchId,
-                            @RequestParam(defaultValue = "60") long seconds) {
+                            @RequestParam(name = "segundos", defaultValue = "60") long seconds) {
         timers.start(matchId, Duration.ofSeconds(seconds));
         return timers.find(matchId).orElse(new TimerState(matchId, 0, true));
     }

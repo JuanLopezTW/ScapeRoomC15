@@ -20,11 +20,11 @@ public class SalaCreadaStompListener {
 
     @EventListener
     public void onSalaCreada(SalaCreadaEvent event) {
-        messaging.convertAndSend("/topic/rooms", listar.ejecutar());
+        messaging.convertAndSend("/topic/salas", listar.ejecutar());
     }
 
     @EventListener
     public void onSalaActualizada(SalaActualizadaEvent event) {
-        messaging.convertAndSend("/topic/rooms", listar.ejecutar());
+        messaging.convertAndSend("/topic/salas", listar.ejecutar());
     }
 }

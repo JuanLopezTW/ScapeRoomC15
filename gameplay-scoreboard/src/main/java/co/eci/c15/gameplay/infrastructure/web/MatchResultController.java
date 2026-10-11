@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-/** Final result of a match (HU-67.6). It is also pushed to /topic/match/{matchId}/result. */
+/** Final result of a match (HU-67.6). It is also pushed to /topic/partidas/{matchId}/resultado. */
 @RestController
 @RequestMapping("/api/partidas/{matchId}/resultado")
 public class MatchResultController {

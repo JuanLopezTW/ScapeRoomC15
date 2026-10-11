@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/matches")
+@RequestMapping("/api/partidas")
 public class MatchTimerController {
 
     private final MatchTimerService timers;
@@ -18,7 +18,7 @@ public class MatchTimerController {
         this.timers = timers;
     }
 
-    @GetMapping("/{matchId}/timer")
+    @GetMapping("/{matchId}/cronometro")
     public ResponseEntity<TimerState> timer(@PathVariable String matchId) {
         return ResponseEntity.of(timers.find(matchId));
     }

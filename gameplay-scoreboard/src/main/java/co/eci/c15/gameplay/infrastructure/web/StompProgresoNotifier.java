@@ -16,6 +16,6 @@ public class StompProgresoNotifier implements ProgresoNotifier {
 
     @Override
     public void notificar(ProgresoPartidaDto progreso) {
-        messaging.convertAndSend("/topic/match/" + progreso.matchId() + "/progress", progreso);
+        messaging.convertAndSend("/topic/partidas/" + progreso.matchId() + "/progreso", progreso);
     }
 }

@@ -78,8 +78,8 @@ class ChallengeWebTest {
                 new ChallengeState("m1", ChallengeState.RUNNING, 12, Map.of("A", 3L, "B", -1L), null)));
         mvc.perform(get("/api/partidas/m1/reto"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.remainingSeconds").value(12))
-                .andExpect(jsonPath("$.scores.A").value(3));
+                .andExpect(jsonPath("$.segundosRestantes").value(12))
+                .andExpect(jsonPath("$.puntajes.A").value(3));
     }
 
     @Test

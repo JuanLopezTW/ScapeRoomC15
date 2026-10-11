@@ -16,6 +16,6 @@ public class StompInventarioNotifier implements InventarioNotifier {
 
     @Override
     public void notificar(InventarioDto inventario) {
-        messaging.convertAndSend("/topic/match/" + inventario.matchId() + "/team/" + inventario.equipoId() + "/inventory", inventario);
+        messaging.convertAndSend("/topic/partidas/" + inventario.matchId() + "/equipos/" + inventario.equipoId() + "/inventario", inventario);
     }
 }

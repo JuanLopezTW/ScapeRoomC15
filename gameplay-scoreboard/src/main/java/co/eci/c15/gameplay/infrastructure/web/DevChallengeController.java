@@ -15,7 +15,7 @@ import java.util.Map;
  * aleatorio (sirve para probar el front del reto).
  */
 @RestController
-@RequestMapping("/dev/matches")
+@RequestMapping("/dev/partidas")
 public class DevChallengeController {
 
     private final HeroVillainChallengeService challenges;
@@ -24,7 +24,7 @@ public class DevChallengeController {
         this.challenges = challenges;
     }
 
-    @PostMapping("/{matchId}/challenge/start")
+    @PostMapping("/{matchId}/reto/inicio")
     public ResponseEntity<?> start(@PathVariable("matchId") String matchId) {
         if (challenges.start(matchId)) return ResponseEntity.ok(challenges.find(matchId).orElseThrow());
         return ResponseEntity.status(HttpStatus.CONFLICT)
