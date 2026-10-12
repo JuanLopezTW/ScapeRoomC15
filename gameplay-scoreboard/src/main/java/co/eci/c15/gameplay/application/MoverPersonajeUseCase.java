@@ -28,7 +28,8 @@ public class MoverPersonajeUseCase {
                 .orElseThrow(() -> new JugadorNoRegistradoException(matchId, userId));
         MapaIsometrico mapa = obtenerMapa.obtener(matchId);
         JugadorEnMapa.Movimiento movimiento = jugador.mover(mapa, destino);
-        events.publishEvent(new PosicionActualizadaEvent(matchId, jugador.getEquipoId(), userId, movimiento.hasta()));
+        events.publishEvent(new PosicionActualizadaEvent(matchId, jugador.getEquipoId(), userId,
+                movimiento.hasta(), movimiento.ruta()));
         return MovimientoDto.from(userId, movimiento);
     }
 }

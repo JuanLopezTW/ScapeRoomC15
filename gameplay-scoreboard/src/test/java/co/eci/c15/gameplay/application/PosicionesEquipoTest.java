@@ -51,13 +51,14 @@ class PosicionesEquipoTest {
 
     @Test
     void moverseAvisaSoloAlTopicDeSuEquipo() {
-        mover.ejecutar(MATCH, "a1", destino);
+        MovimientoDto movimiento = mover.ejecutar(MATCH, "a1", destino);
 
         assertEquals(1, enviados.size());
         Envio envio = enviados.get(0);
         assertEquals(MATCH, envio.matchId());
         assertEquals("e1", envio.equipoId());
-        assertEquals(new PosicionJugadorDto("a1", destino.x(), destino.y(), true), envio.dto());
+        assertEquals(new PosicionJugadorDto("a1", destino.x(), destino.y(), true, movimiento.ruta()), envio.dto());
+        assertEquals(destino, envio.dto().ruta().get(envio.dto().ruta().size() - 1));
     }
 
     @Test

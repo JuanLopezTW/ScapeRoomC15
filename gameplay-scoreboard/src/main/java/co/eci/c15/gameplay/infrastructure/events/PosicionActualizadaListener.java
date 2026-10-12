@@ -18,6 +18,6 @@ public class PosicionActualizadaListener {
     @EventListener
     public void onPosicionActualizada(PosicionActualizadaEvent event) {
         notifier.notificar(event.matchId(), event.equipoId(),
-                PosicionJugadorDto.conectado(event.userId(), event.posicion()));
+                PosicionJugadorDto.movimiento(event.userId(), event.posicion(), event.ruta()));
     }
 }

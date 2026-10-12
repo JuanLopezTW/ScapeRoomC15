@@ -83,7 +83,7 @@ class MoverPersonajeUseCaseTest {
         assertEquals(destino, dto.hasta());
         assertEquals(destino, dto.ruta().get(dto.ruta().size() - 1));
         assertEquals(destino, jugadores.find(MATCH, "u1").orElseThrow().getPosicion());
-        assertEquals(List.of(new PosicionActualizadaEvent(MATCH, "e1", "u1", destino)), publicados);
+        assertEquals(List.of(new PosicionActualizadaEvent(MATCH, "e1", "u1", destino, dto.ruta())), publicados);
     }
 
     @Test
