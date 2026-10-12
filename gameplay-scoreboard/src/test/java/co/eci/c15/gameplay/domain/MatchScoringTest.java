@@ -37,10 +37,29 @@ class MatchScoringTest {
     }
 
     @Test
-    void tieOnPointsIsBrokenBySolvedPuzzles() {
-        // A: 2 puzzles = 2; B: 1 puzzle + challenge = 2 -> A solved more puzzles
+    void challengeAgainstAPuzzleIsADraw() {
+        // A wins the challenge (1), B solves one puzzle (1): same score -> draw
+        MatchResult result = rank(Map.of("B", 1), Map.of("A", 1));
+        assertTrue(result.isDraw());
+        assertNull(result.winnerTeamId());
+        assertEquals(List.of("B", "A"), result.tiedTeamIds());
+    }
+
+    @Test
+    void sameScoreIsADrawEvenWithDifferentPuzzles() {
+        // A: 2 puzzles = 2; B: 1 puzzle + challenge = 2 -> draw; A goes first in the standings
         MatchResult result = rank(Map.of("A", 2, "B", 1), Map.of("B", 1));
-        assertEquals("A", result.winnerTeamId());
+        assertTrue(result.isDraw());
+        assertEquals(List.of("A", "B"), result.tiedTeamIds());
+        assertEquals("A", result.standings().get(0).teamId());
+    }
+
+    @Test
+    void allPuzzlesAgainstPuzzlesPlusChallengeIsADraw() {
+        // A solves all 3 (3); B solves 2 and wins the challenge (3): same score -> draw
+        MatchResult result = MatchScoring.rank("m1", MatchResult.Reason.ALL_PUZZLES_SOLVED, TEAMS,
+                Map.of("A", 3, "B", 2), Map.of("B", 1));
+        assertTrue(result.isDraw());
     }
 
     @Test

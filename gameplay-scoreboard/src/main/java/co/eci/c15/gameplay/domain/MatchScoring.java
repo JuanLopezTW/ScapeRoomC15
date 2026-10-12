@@ -8,7 +8,9 @@ import java.util.Map;
 
 /**
  * Final score of a match (HU-67.6): one point per solved puzzle plus one per challenge won.
- * Ties are broken by solved puzzles; if teams are still even it is a draw (no winner).
+ * The same score is a draw (no winner), even if the teams solved a different number of puzzles:
+ * winning the challenge is worth exactly one puzzle (Juan, 2026-10-12). Puzzles only order
+ * tied teams in the standings.
  */
 public final class MatchScoring {
 
@@ -32,7 +34,7 @@ public final class MatchScoring {
 
         TeamScore top = standings.get(0);
         List<String> leaders = standings.stream()
-                .filter(t -> t.score() == top.score() && t.puzzlesSolved() == top.puzzlesSolved())
+                .filter(t -> t.score() == top.score())
                 .map(TeamScore::teamId)
                 .toList();
         String winner = leaders.size() == 1 ? top.teamId() : null;

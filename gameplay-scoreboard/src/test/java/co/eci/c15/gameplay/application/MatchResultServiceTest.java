@@ -116,7 +116,7 @@ class MatchResultServiceTest {
     }
 
     @Test
-    void finishingFirstDoesNotGuaranteeTheWin() {
+    void finishingFirstWithTheSameScoreIsADraw() {
         solve("B", "acertijo-1");
         solve("B", "acertijo-2");
         service.challengeFinished(new ChallengeFinishedEvent("m1", "B", Map.of("A", 0L, "B", 9L)));
@@ -125,8 +125,10 @@ class MatchResultServiceTest {
         solve("A", "acertijo-3");
 
         MatchResult result = service.find("m1").orElseThrow();
-        // A: 3 puzzles = 3; B: 2 puzzles + challenge = 3 -> tie broken by puzzles: A
-        assertEquals("A", result.winnerTeamId());
+        // A: 3 puzzles = 3; B: 2 puzzles + challenge = 3 -> same score: draw
+        assertEquals(MatchResult.Reason.ALL_PUZZLES_SOLVED, result.reason());
+        assertTrue(result.isDraw());
+        assertNull(result.winnerTeamId());
         assertEquals(3, result.standings().get(1).score());
     }
 
