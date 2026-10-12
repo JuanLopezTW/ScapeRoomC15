@@ -1,5 +1,7 @@
 name: CI
 
+# Etapas: compile -> test -> (analysis | build) -> deploy
+# deploy solo corre en push a main.
 
 on:
   pull_request:
@@ -7,30 +9,24 @@ on:
   push:
     branches: ["**"]
 
-
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # En main no se cancela para no cortar un deploy a la mitad
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
   pull-requests: read
 
 jobs:
-  build-and-test:
-    name: Compilar y probar
+  compile:
+    name: Compilar
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      RUN_SONAR: ${{ secrets.SONAR_TOKEN != '' && (github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_name == 'develop') }}
-
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 #
+
       - name: Java 21
         uses: actions/setup-java@v4
         with:
@@ -38,19 +34,29 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Compilar y probar
-        if: env.RUN_SONAR != 'true'
-        run: mvn -B -ntp verify
+      # test-compile para que un test que no compila falle aquí y no en "test"
+      - name: Compilar (main + tests)
+        run: mvn -B -ntp test-compile
 
-      - name: Compilar, probar y analizar con Sonar
-        if: env.RUN_SONAR == 'true'
-        run: >
-          mvn -B -ntp verify
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-          -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
-          -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
-          -Dsonar.qualitygate.wait=true
+  test:
+    name: Probar
+    needs: compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      # verify corre los tests y genera el reporte de JaCoCo (configurado en el pom raíz)
+      - name: Pruebas + cobertura
+        run: mvn -B -ntp verify
 
       - name: Subir reportes de pruebas
         if: always()
@@ -59,3 +65,129 @@ jobs:
           name: surefire-reports
           path: "**/target/surefire-reports/"
           if-no-files-found: ignore
+
+      - name: Subir reportes de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-reports
+          path: "**/target/site/jacoco/"
+          if-no-files-found: warn
+
+  analysis:
+    name: Analisis (JaCoCo + SonarQube Cloud)
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      RUN_SONAR: ${{ secrets.SONAR_TOKEN != '' && (github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_name == 'develop') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Sonar necesita el historial para el blame / código nuevo
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      # Trae los jacoco.xml del job "test" en sus rutas originales (<modulo>/target/site/jacoco/)
+      - name: Descargar reportes de cobertura
+        uses: actions/download-artifact@v4
+        with:
+          name: jacoco-reports
+          path: .
+
+      - name: Descargar reportes de pruebas
+        uses: actions/download-artifact@v4
+        with:
+          name: surefire-reports
+          path: .
+
+      - name: Resumen de cobertura
+        run: |
+          echo "### Cobertura JaCoCo (líneas)" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Módulo | Cubiertas | Total | % |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          for csv in */target/site/jacoco/jacoco.csv; do
+            [ -f "$csv" ] || continue
+            module="${csv%%/*}"
+            awk -F, -v m="$module" 'NR>1 { missed+=$8; covered+=$9 }
+              END { total=missed+covered; pct=(total>0 ? 100*covered/total : 0);
+                    printf "| %s | %d | %d | %.1f%% |\n", m, covered, total, pct }' "$csv" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      # Sonar necesita los .class (main y test); los tests no se repiten, la cobertura ya viene del job "test".
+      # Organización, project key y host están en las <properties> del pom raíz.
+      - name: Analizar con SonarQube Cloud
+        if: env.RUN_SONAR == 'true'
+        run: >
+          mvn -B -ntp -DskipTests -Djacoco.skip=true test-compile
+          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.qualitygate.wait=true
+
+      - name: Sonar omitido
+        if: env.RUN_SONAR != 'true'
+        run: echo "::notice::Sonar omitido (sin SONAR_TOKEN o rama distinta de main/develop/PR). La cobertura de JaCoCo sí quedó en el artefacto jacoco-reports."
+
+  build:
+    name: Construir imagen Docker
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Solo comprueba que el Dockerfile construye; no publica nada
+      - name: Construir imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: escaperoom-c15:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy
+    needs: [analysis, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # GHCR exige el nombre en minúsculas (el repo es JuanLopezTW/ScapeRoomC15)
+      - name: Nombre de la imagen
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login a GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construir y publicar imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
