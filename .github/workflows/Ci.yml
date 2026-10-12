@@ -1,10 +1,5 @@
 name: CI
 
-# Etapas: compile -> test -> (analysis | build) -> deploy
-# deploy solo corre en push a main.
-
-# Las ramas de trabajo se validan con el PR; push solo en develop/main
-# (con "**" cada push a una rama con PR abierto corría la pipeline dos veces).
 on:
   pull_request:
     branches: [develop, main]
@@ -16,7 +11,7 @@ concurrency:
   # En main no se cancela para no cortar un deploy a la mitad
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-# Permisos del GITHUB_TOKEN declarados por job (mínimo privilegio)
+
 jobs:
   compile:
     name: Compilar
@@ -35,7 +30,7 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # test-compile para que un test que no compila falle aquí y no en "test"
+
       - name: Compilar (main + tests)
         run: mvn -B -ntp test-compile
 
@@ -57,7 +52,7 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # verify corre los tests y genera el reporte de JaCoCo (configurado en el pom raíz)
+
       - name: Pruebas + cobertura
         run: mvn -B -ntp verify
 
@@ -102,7 +97,7 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # Trae los reportes del job "test" en sus rutas originales; Sonar lee app/target/site/jacoco-aggregate/jacoco.xml
+
       - name: Descargar reportes de cobertura
         uses: actions/download-artifact@v4
         with:
@@ -129,9 +124,7 @@ jobs:
                       printf "| %s | %d | %d | %.1f%% |\n", m, covered[m], t, (t>0 ? 100*covered[m]/t : 0) }
                     printf "| **TOTAL** | %d | %d | **%.1f%%** |\n", tc, tm+tc, (tm+tc>0 ? 100*tc/(tm+tc) : 0) }' "$csv"
           } >> "$GITHUB_STEP_SUMMARY"
-
-      # Sonar necesita los .class (main y test); los tests no se repiten, la cobertura ya viene del job "test".
-      # Organización, project key y host están en las <properties> del pom raíz.
+.
       - name: Analizar con SonarQube Cloud
         if: env.RUN_SONAR == 'true'
         run: >
@@ -157,7 +150,7 @@ jobs:
       - name: Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
-      # Solo comprueba que el Dockerfile construye; no publica nada
+
       - name: Construir imagen
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
@@ -176,11 +169,15 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      AZURE_RESOURCE_GROUP: Escape_RoomC15
+      AZURE_WEBAPP_NAME: escaperoomc15-api
+      AZURE_WEBAPP_URL: https://escaperoomc15-api-gcbyhbb5ajhhfwh8.centralus-01.azurewebsites.net
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # GHCR exige el nombre en minúsculas (el repo es JuanLopezTW/ScapeRoomC15)
+
       - name: Nombre de la imagen
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
@@ -203,3 +200,33 @@ jobs:
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
           cache-from: type=gha
+
+      - name: Login en Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+
+      - name: Reiniciar Web App
+        run: |
+          az webapp restart \
+            --name "$AZURE_WEBAPP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP"
+
+      - name: Verificar que la app responde
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$AZURE_WEBAPP_URL" || echo 000)
+            echo "Intento $i: HTTP $code"
+            if [ "$code" != "000" ] && [ "$code" -lt 500 ]; then
+              echo "### Deploy OK: $AZURE_WEBAPP_URL (HTTP $code)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::error::La app no respondió tras el deploy. Revisa el Log stream del Web App."
+          exit 1
+
+      - name: Logout de Azure
+        if: always()
+        run: az logout || true
