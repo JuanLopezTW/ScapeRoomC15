@@ -11,6 +11,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.greaterThan;
@@ -36,7 +42,7 @@ class PartidaInicioFlujoTest {
     void conDosEquiposListosLaPartidaArrancaSolaYArrancaElCronometro() throws Exception {
         String salaId = salaConDosEquipos("Sala inicio");
         for (String u : new String[]{"ana", "beto", "caro", "dani"}) marcarListo(salaId, u);
-        assertTrue(cuentaRegresiva.enCurso(salaId));
+        await().atMost(Duration.ofSeconds(5)).until(() -> cuentaRegresiva.enCurso(salaId));
 
         await().atMost(Duration.ofSeconds(10)).untilAsserted(() ->
                 mvc.perform(get("/api/salas/{id}", salaId)).andExpect(status().isConflict()));
@@ -55,11 +61,11 @@ class PartidaInicioFlujoTest {
     void siAlguienSeDesmarcaDuranteLaCuentaRegresivaNoArranca() throws Exception {
         String salaId = salaConDosEquipos("Sala cancelada");
         for (String u : new String[]{"ana", "beto", "caro", "dani"}) marcarListo(salaId, u);
-        assertTrue(cuentaRegresiva.enCurso(salaId));
+        await().atMost(Duration.ofSeconds(5)).until(() -> cuentaRegresiva.enCurso(salaId));
 
         mvc.perform(delete("/api/salas/{id}/listo", salaId).param("userId", "dani"))
                 .andExpect(status().isOk());
-        assertFalse(cuentaRegresiva.enCurso(salaId));
+        await().atMost(Duration.ofSeconds(5)).until(() -> !cuentaRegresiva.enCurso(salaId));
 
         Thread.sleep(1500);
         mvc.perform(get("/api/salas/{id}", salaId))
@@ -75,7 +81,41 @@ class PartidaInicioFlujoTest {
         unirseASala(salaId, "eli");
         for (String u : new String[]{"ana", "beto", "caro", "dani"}) marcarListo(salaId, u);
 
-        assertFalse(cuentaRegresiva.enCurso(salaId));
+        // La evaluacion es asincrona: comprobar que no arranca durante un rato
+        await().during(Duration.ofMillis(800)).atMost(Duration.ofSeconds(3))
+                .until(() -> !cuentaRegresiva.enCurso(salaId));
+    }
+
+    @Test
+    void siTodosMarcanListoALaVezLaPartidaArrancaIgual() throws Exception {
+        // Antes el arranque se evaluaba antes del commit: con "listos" simultaneos nadie veia a
+        // todos listos y la partida no arrancaba nunca (lo encontro la prueba de carga).
+        List<String> salas = new ArrayList<>();
+        for (int i = 0; i < 5; i++) salas.add(salaConDosEquipos("Sala simultanea " + i));
+
+        ExecutorService pool = Executors.newFixedThreadPool(4);
+        try {
+            for (String salaId : salas) {
+                CountDownLatch salida = new CountDownLatch(1);
+                List<Future<?>> listos = new ArrayList<>();
+                for (String u : new String[]{"ana", "beto", "caro", "dani"}) {
+                    listos.add(pool.submit(() -> {
+                        salida.await();
+                        marcarListo(salaId, u);
+                        return null;
+                    }));
+                }
+                salida.countDown();
+                for (Future<?> f : listos) f.get();
+            }
+        } finally {
+            pool.shutdown();
+        }
+
+        for (String salaId : salas) {
+            await().atMost(Duration.ofSeconds(10)).untilAsserted(() ->
+                    mvc.perform(get("/api/salas/{id}", salaId)).andExpect(status().isConflict()));
+        }
     }
 
     /** Sala con dos equipos: ana y beto en el 1, caro y dani en el 2. */
