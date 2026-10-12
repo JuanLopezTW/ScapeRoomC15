@@ -83,7 +83,9 @@ jobs:
     timeout-minutes: 15
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      RUN_SONAR: ${{ secrets.SONAR_TOKEN != '' && (github.event_name == 'pull_request' || github.ref_name == 'main' || github.ref_name == 'develop') }}
+      # Sonar en PRs y en main (rama principal en SonarCloud). En develop no: el plan solo analiza la
+      # rama principal, y el código de develop ya se analiza en su PR.
+      RUN_SONAR: ${{ secrets.SONAR_TOKEN != '' && (github.event_name == 'pull_request' || github.ref_name == 'main') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -134,7 +136,7 @@ jobs:
 
       - name: Sonar omitido
         if: env.RUN_SONAR != 'true'
-        run: echo "::notice::Sonar omitido (sin SONAR_TOKEN o rama distinta de main/develop/PR). La cobertura de JaCoCo sí quedó en el artefacto jacoco-reports."
+        run: echo "::notice::Sonar omitido (sin SONAR_TOKEN o no es PR ni main). La cobertura de JaCoCo sí quedó en el artefacto jacoco-reports."
 
   build:
     name: Construir imagen Docker
