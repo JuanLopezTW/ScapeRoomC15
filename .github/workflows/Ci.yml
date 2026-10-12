@@ -124,7 +124,7 @@ jobs:
                       printf "| %s | %d | %d | %.1f%% |\n", m, covered[m], t, (t>0 ? 100*covered[m]/t : 0) }
                     printf "| **TOTAL** | %d | %d | **%.1f%%** |\n", tc, tm+tc, (tm+tc>0 ? 100*tc/(tm+tc) : 0) }' "$csv"
           } >> "$GITHUB_STEP_SUMMARY"
-.
+
       - name: Analizar con SonarQube Cloud
         if: env.RUN_SONAR == 'true'
         run: >
