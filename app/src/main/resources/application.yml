@@ -18,4 +18,5 @@ c15:
     duracion: ${PARTIDA_DURACION:30m}
     cuenta-regresiva: 5s
   reto:
-    duracion: ${RETO_DURACION:20s}
+    # 5 s del aviso del front (ModalDesafio) + 20 s de juego: el reto corre desde que sale el aviso
+    duracion: ${RETO_DURACION:25s}
