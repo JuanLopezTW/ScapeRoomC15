@@ -71,6 +71,14 @@ public final class Sala {
 
     public boolean contieneJugador(String userId) { return jugadores.contains(userId); }
 
+    /** El jugador deja la sala (solo en el lobby). */
+    public void retirarJugador(String userId) {
+        if (estado == Estado.EN_PARTIDA) throw new PartidaYaIniciadaException(id);
+        jugadores.remove(userId);
+    }
+
+    public boolean esAnfitrion(String userId) { return anfitrionId.equals(userId); }
+
     /**
      * Lista para iniciar (HU-64.4): todos los jugadores de la sala tienen equipo, hay al menos
      * {@link #MIN_EQUIPOS} equipos con jugadores y todos esos estan listos. Los equipos vacios no cuentan.

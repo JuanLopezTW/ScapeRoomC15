@@ -7,6 +7,7 @@ import co.eci.c15.salas.application.ListarSalasUseCase;
 import co.eci.c15.salas.application.MarcarListoUseCase;
 import co.eci.c15.salas.application.SalaDetalleDto;
 import co.eci.c15.salas.application.SalaDto;
+import co.eci.c15.salas.application.SalirDeSalaUseCase;
 import co.eci.c15.salas.application.UnirseSalaUseCase;
 import co.eci.c15.salas.application.VerSalaUseCase;
 import co.eci.c15.salas.domain.ConfiguracionInvalidaException;
@@ -34,10 +35,11 @@ public class SalaController {
     private final ListarEquiposUseCase listarEquipos;
     private final VerSalaUseCase verSala;
     private final MarcarListoUseCase marcarListo;
+    private final SalirDeSalaUseCase salir;
 
     public SalaController(CrearSalaUseCase crear, ListarSalasUseCase listar, ConfigurarSalaUseCase configurar,
                           UnirseSalaUseCase unirse, ListarEquiposUseCase listarEquipos,
-                          VerSalaUseCase verSala, MarcarListoUseCase marcarListo) {
+                          VerSalaUseCase verSala, MarcarListoUseCase marcarListo, SalirDeSalaUseCase salir) {
         this.crear = crear;
         this.listar = listar;
         this.configurar = configurar;
@@ -45,6 +47,7 @@ public class SalaController {
         this.listarEquipos = listarEquipos;
         this.verSala = verSala;
         this.marcarListo = marcarListo;
+        this.salir = salir;
     }
 
     @GetMapping
@@ -115,6 +118,16 @@ public class SalaController {
     public ResponseEntity<?> desmarcarListo(@PathVariable("salaId") String salaId,
                                             @RequestParam(value = "userId", required = false) String userId) {
         return listo(() -> marcarListo.desmarcar(salaId, userId));
+    }
+
+    /**
+     * Salir del lobby (boton VOLVER). Si es el anfitrion la sala se cierra. Siempre 204: si la sala ya
+     * no existe, ya empezo la partida o el jugador no estaba, no hay nada que hacer.
+     */
+    @DeleteMapping("/{salaId}/jugadores/{userId}")
+    public ResponseEntity<Void> salir(@PathVariable("salaId") String salaId, @PathVariable("userId") String userId) {
+        salir.ejecutar(salaId, userId);
+        return ResponseEntity.noContent().build();
     }
 
     private static ResponseEntity<?> listo(Supplier<SalaDetalleDto> accion) {

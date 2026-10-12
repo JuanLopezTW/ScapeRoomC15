@@ -27,4 +27,19 @@ class SalaTest {
         assertEquals(Sala.Estado.EN_PARTIDA, sala.getEstado());
         assertFalse(sala.isDisponible());
     }
+
+    @Test
+    void retirarJugadorLoSacaSoloEnElLobby() {
+        Sala sala = Sala.crear("Sala", "host");
+        sala.unirJugador("ana");
+        assertTrue(sala.esAnfitrion("host"));
+        assertFalse(sala.esAnfitrion("ana"));
+
+        sala.retirarJugador("ana");
+        assertFalse(sala.contieneJugador("ana"));
+
+        sala.unirJugador("ana");
+        sala.iniciarPartida();
+        assertThrows(PartidaYaIniciadaException.class, () -> sala.retirarJugador("ana"));
+    }
 }

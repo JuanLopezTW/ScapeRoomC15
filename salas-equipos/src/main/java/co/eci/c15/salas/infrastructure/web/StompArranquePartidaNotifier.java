@@ -34,6 +34,11 @@ public class StompArranquePartidaNotifier implements ArranquePartidaNotifier {
         enviar(salaId, new ArranqueMensaje("INICIADA", null, matchId));
     }
 
+    @Override
+    public void cerrada(String salaId) {
+        enviar(salaId, new ArranqueMensaje("CERRADA", null, null));
+    }
+
     private void enviar(String salaId, ArranqueMensaje mensaje) {
         messaging.convertAndSend("/topic/salas/" + salaId + "/inicio", mensaje);
     }

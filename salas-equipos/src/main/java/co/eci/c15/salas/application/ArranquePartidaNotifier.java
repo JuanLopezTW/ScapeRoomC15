@@ -5,4 +5,6 @@ public interface ArranquePartidaNotifier {
     void cuentaRegresiva(String salaId, long segundos);
     void cancelada(String salaId);
     void iniciada(String salaId, String matchId);
+    /** El anfitrion se fue del lobby y la sala ya no existe. */
+    void cerrada(String salaId);
 }
