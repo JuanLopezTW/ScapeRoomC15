@@ -62,7 +62,7 @@ class RolesInfraTest {
 
         new StompRolesNotifier(messaging).notificar(dto);
 
-        verify(messaging, times(1)).convertAndSend("/topic/match/p1/team/e1/roles", dto);
+        verify(messaging, times(1)).convertAndSend("/topic/partidas/p1/equipos/e1/roles", dto);
         verifyNoMoreInteractions(messaging);
     }
 

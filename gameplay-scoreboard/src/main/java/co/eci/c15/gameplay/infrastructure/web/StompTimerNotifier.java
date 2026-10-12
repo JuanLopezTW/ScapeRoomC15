@@ -17,6 +17,6 @@ public class StompTimerNotifier implements TimerNotifier {
 
     @Override
     public void notify(TimerState state) {
-        messaging.convertAndSend("/topic/match/" + state.matchId() + "/timer", state);
+        messaging.convertAndSend("/topic/partidas/" + state.matchId() + "/cronometro", state);
     }
 }

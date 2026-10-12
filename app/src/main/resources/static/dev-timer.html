@@ -23,8 +23,8 @@
     const fmt = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
 
     function render(state) {
-        document.getElementById("time").textContent = fmt(state.remainingSeconds);
-        document.getElementById("status").textContent = state.timeUp ? "Tiempo agotado" : "";
+        document.getElementById("time").textContent = fmt(state.segundosRestantes);
+        document.getElementById("status").textContent = state.tiempoAgotado ? "Tiempo agotado" : "";
     }
 
     function connect() {
@@ -32,8 +32,8 @@
         if (client) client.deactivate();
         client = new StompJs.Client({ brokerURL: `ws://${location.host}/ws` });
         client.onConnect = async () => {
-            client.subscribe(`/topic/match/${id}/timer`, msg => render(JSON.parse(msg.body)));
-            const res = await fetch(`/api/matches/${id}/timer`);   // sincronizacion inicial
+            client.subscribe(`/topic/partidas/${id}/cronometro`, msg => render(JSON.parse(msg.body)));
+            const res = await fetch(`/api/partidas/${id}/cronometro`);   // sincronizacion inicial
             if (res.ok) render(await res.json());
         };
         client.activate();
@@ -41,7 +41,7 @@
 
     async function start() {
         const id = document.getElementById("match").value;
-        await fetch(`/dev/matches/${id}/start?seconds=60`, { method: "POST" });
+        await fetch(`/dev/partidas/${id}/inicio?segundos=60`, { method: "POST" });
     }
 </script>
 </body>

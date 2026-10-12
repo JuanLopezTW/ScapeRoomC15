@@ -16,6 +16,12 @@
     <description>Punto de arranque del monolito: ensambla todos los modulos</description>
 
     <dependencies>
+        <!-- Ya llega transitiva; explícita para que report-aggregate de JaCoCo incluya common -->
+        <dependency>
+            <groupId>co.eci</groupId>
+            <artifactId>common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>co.eci</groupId>
             <artifactId>auth-perfil</artifactId>
@@ -68,6 +74,32 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Cobertura agregada de todo el reactor: junta los jacoco.exec de app y de los módulos
+               de los que depende, así los tests de integración de app cuentan para controllers, configs
+               y adapters de los otros módulos. Queda en app/target/site/jacoco-aggregate/ (lo lee Sonar). -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>report-aggregate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <includeCurrentProject>true</includeCurrentProject>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

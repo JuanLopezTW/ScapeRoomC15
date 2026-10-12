@@ -38,6 +38,26 @@ class EquipoRepositoryAdapterTest {
     }
 
     @Test
+    void conservaLosMiembrosListos() {
+        Equipo equipo = Equipo.crear("sala-1", 1, 3);
+        equipo.unirMiembro("user-1");
+        equipo.unirMiembro("user-2");
+        equipo.marcarListo("user-1");
+        adapter.save(equipo);
+        em.flush();
+        em.clear();
+
+        Equipo leido = adapter.findById(equipo.getId()).orElseThrow();
+        assertEquals(Set.of("user-1"), leido.getListos());
+
+        leido.quitarMiembro("user-1");
+        adapter.save(leido);
+        em.flush();
+        em.clear();
+        assertTrue(adapter.findById(equipo.getId()).orElseThrow().getListos().isEmpty());
+    }
+
+    @Test
     void listaLosEquiposDeLaSalaOrdenadosPorNumero() {
         adapter.save(Equipo.crear("sala-1", 2, 4));
         adapter.save(Equipo.crear("sala-1", 1, 4));

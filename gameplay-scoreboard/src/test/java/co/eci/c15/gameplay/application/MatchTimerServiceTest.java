@@ -56,6 +56,23 @@ class MatchTimerServiceTest {
     }
 
     @Test
+    void stopRemovesTheTimerWithoutTimeUp() {
+        ScheduledFuture<?> task = mock(ScheduledFuture.class);
+        doReturn(task).when(scheduler)
+                .scheduleAtFixedRate(any(Runnable.class), any(Instant.class), any(Duration.class));
+        service.start("m1", Duration.ofSeconds(60));
+
+        assertTrue(service.stop("m1"));
+
+        verify(task).cancel(false);
+        assertTrue(service.find("m1").isEmpty());
+        clock.advance(Duration.ofSeconds(61));
+        service.tick("m1");
+        assertTrue(events.isEmpty());
+        assertFalse(service.stop("m1"));
+    }
+
+    @Test
     void findReturnsRemainingTime() {
         service.start("m1", Duration.ofSeconds(60));
         clock.advance(Duration.ofSeconds(10));

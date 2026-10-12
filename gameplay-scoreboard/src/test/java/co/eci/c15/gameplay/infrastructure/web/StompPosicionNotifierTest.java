@@ -17,7 +17,7 @@ class StompPosicionNotifierTest {
 
         new StompPosicionNotifier(messaging).notificar("p1", "e1", dto);
 
-        verify(messaging).convertAndSend("/topic/match/p1/team/e1/positions", dto);
+        verify(messaging).convertAndSend("/topic/partidas/p1/equipos/e1/posiciones", dto);
         verifyNoMoreInteractions(messaging);
     }
 }

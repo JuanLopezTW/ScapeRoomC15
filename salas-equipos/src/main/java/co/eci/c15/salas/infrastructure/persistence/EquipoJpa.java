@@ -21,15 +21,20 @@ class EquipoJpa {
     @CollectionTable(name = "equipo_miembros", joinColumns = @JoinColumn(name = "equipo_id"))
     @Column(name = "user_id", nullable = false)
     private Set<String> miembros = new HashSet<>();
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "equipo_listos", joinColumns = @JoinColumn(name = "equipo_id"))
+    @Column(name = "user_id", nullable = false)
+    private Set<String> listos = new HashSet<>();
 
     protected EquipoJpa() {}
 
-    EquipoJpa(String id, String salaId, int numero, int cupoMaximo, Set<String> miembros) {
+    EquipoJpa(String id, String salaId, int numero, int cupoMaximo, Set<String> miembros, Set<String> listos) {
         this.id = id;
         this.salaId = salaId;
         this.numero = numero;
         this.cupoMaximo = cupoMaximo;
         this.miembros = new HashSet<>(miembros);
+        this.listos = new HashSet<>(listos);
     }
 
     String getId() { return id; }
@@ -37,4 +42,5 @@ class EquipoJpa {
     int getNumero() { return numero; }
     int getCupoMaximo() { return cupoMaximo; }
     Set<String> getMiembros() { return miembros; }
+    Set<String> getListos() { return listos; }
 }

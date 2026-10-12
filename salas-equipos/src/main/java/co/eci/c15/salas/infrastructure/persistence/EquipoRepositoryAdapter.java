@@ -19,7 +19,7 @@ public class EquipoRepositoryAdapter implements EquipoRepository {
     @Override
     public Equipo save(Equipo equipo) {
         jpa.save(new EquipoJpa(equipo.getId(), equipo.getSalaId(), equipo.getNumero(),
-                equipo.getCupoMaximo(), equipo.getMiembros()));
+                equipo.getCupoMaximo(), equipo.getMiembros(), equipo.getListos()));
         return equipo;
     }
 
@@ -39,6 +39,6 @@ public class EquipoRepositoryAdapter implements EquipoRepository {
     }
 
     private Equipo toDomain(EquipoJpa e) {
-        return Equipo.reconstituir(e.getId(), e.getSalaId(), e.getNumero(), e.getCupoMaximo(), e.getMiembros());
+        return Equipo.reconstituir(e.getId(), e.getSalaId(), e.getNumero(), e.getCupoMaximo(), e.getMiembros(), e.getListos());
     }
 }

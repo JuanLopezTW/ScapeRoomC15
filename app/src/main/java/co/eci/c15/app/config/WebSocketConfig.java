@@ -10,9 +10,16 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  * Configuracion STOMP unica para todo el monolito (gameplay, salas, chat).
  *
  * Topics acordados:
- *   /topic/rooms                 catalogo de salas
- *   /topic/room/{id}             sala, listos, arranque
- *   /topic/match/{id}/...        tiempo, reto, fin de partida
+ *   /topic/salas                                   catalogo de salas
+ *   /topic/salas/{id}                              detalle de la sala (lobby, listos)
+ *   /topic/salas/{id}/inicio                       cuenta regresiva y arranque
+ *   /topic/partidas/{id}/cronometro                tiempo restante
+ *   /topic/partidas/{id}/reto                      reto Heroe vs Verdugo
+ *   /topic/partidas/{id}/resultado                 fin de partida
+ *   /topic/partidas/{id}/progreso                  acertijos resueltos por equipo
+ *   /topic/partidas/{id}/equipos/{eq}/posiciones   posiciones del equipo
+ *   /topic/partidas/{id}/equipos/{eq}/inventario   inventario del equipo
+ *   /topic/partidas/{id}/equipos/{eq}/roles        roles del equipo
  */
 @Configuration
 @EnableWebSocketMessageBroker

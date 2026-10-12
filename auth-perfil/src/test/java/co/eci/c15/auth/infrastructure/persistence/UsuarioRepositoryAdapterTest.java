@@ -7,6 +7,9 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
+import java.util.List;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
@@ -36,5 +39,19 @@ class UsuarioRepositoryAdapterTest {
         assertTrue(adapter.existsByUsername("jugador1"));
         assertFalse(adapter.existsByUsername("otro"));
         assertTrue(adapter.findByUsername("otro").isEmpty());
+    }
+
+    @Test
+    void findAllByIdOmiteLosQueNoExisten() {
+        Usuario juan = adapter.save(Usuario.crear("juan"));
+        Usuario laura = adapter.save(Usuario.crear("laura"));
+        adapter.save(Usuario.crear("otro"));
+        em.flush();
+        em.clear();
+
+        List<Usuario> leidos = adapter.findAllById(List.of(juan.getId(), laura.getId(), "no-existe"));
+
+        assertEquals(Set.of(juan, laura), Set.copyOf(leidos));
+        assertTrue(leidos.stream().anyMatch(u -> u.getUsername().equals("laura")));
     }
 }

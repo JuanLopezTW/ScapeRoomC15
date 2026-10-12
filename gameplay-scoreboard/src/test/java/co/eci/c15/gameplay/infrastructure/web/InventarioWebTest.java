@@ -100,7 +100,7 @@ class InventarioWebTest {
 
         new StompInventarioNotifier(messaging).notificar(INV);
 
-        verify(messaging).convertAndSend("/topic/match/m1/team/e1/inventory", INV);
+        verify(messaging).convertAndSend("/topic/partidas/m1/equipos/e1/inventario", INV);
         verifyNoMoreInteractions(messaging);
     }
 }

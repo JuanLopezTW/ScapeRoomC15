@@ -2,9 +2,9 @@ spring:
   application:
     name: escaperoom-c15
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/escaperoom_c15
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:escaperoom_c15}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -12,3 +12,11 @@ spring:
 
 server:
   port: 8080
+
+c15:
+  partida:
+    duracion: ${PARTIDA_DURACION:30m}
+    cuenta-regresiva: 5s
+  reto:
+    # 5 s del aviso del front (ModalDesafio) + 20 s de juego: el reto corre desde que sale el aviso
+    duracion: ${RETO_DURACION:25s}

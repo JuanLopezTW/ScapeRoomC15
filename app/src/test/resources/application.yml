@@ -8,3 +8,7 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+
+c15:
+  partida:
+    cuenta-regresiva: 1s

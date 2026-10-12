@@ -3,9 +3,11 @@ package co.eci.c15.salas.domain;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public final class Sala {
 
@@ -68,6 +70,20 @@ public final class Sala {
     }
 
     public boolean contieneJugador(String userId) { return jugadores.contains(userId); }
+
+    /**
+     * Lista para iniciar (HU-64.4): todos los jugadores de la sala tienen equipo, hay al menos
+     * {@link #MIN_EQUIPOS} equipos con jugadores y todos esos estan listos. Los equipos vacios no cuentan.
+     */
+    public boolean listaParaIniciar(Collection<Equipo> equipos) {
+        if (!isDisponible()) return false;
+        List<Equipo> conJugadores = equipos.stream().filter(e -> !e.isVacio()).toList();
+        if (conJugadores.size() < MIN_EQUIPOS) return false;
+        Set<String> conEquipo = conJugadores.stream()
+                .flatMap(e -> e.getMiembros().stream())
+                .collect(Collectors.toSet());
+        return conEquipo.containsAll(jugadores) && conJugadores.stream().allMatch(Equipo::isListo);
+    }
 
     public void iniciarPartida() { this.estado = Estado.EN_PARTIDA; }
 

@@ -61,4 +61,21 @@ class SalaRepositoryAdapterTest {
 
         assertEquals(Sala.Estado.EN_PARTIDA, adapter.findById(sala.getId()).orElseThrow().getEstado());
     }
+
+    @Test
+    void deleteBorraLaSalaYSusJugadores() {
+        Sala sala = Sala.crear("Sala 1", "anfitrion-1");
+        sala.unirJugador("user-1");
+        Sala otra = Sala.crear("Sala 2", "anfitrion-2");
+        adapter.save(sala);
+        adapter.save(otra);
+        em.flush();
+
+        adapter.delete(sala.getId());
+        em.flush();
+        em.clear();
+
+        assertTrue(adapter.findById(sala.getId()).isEmpty());
+        assertEquals(1, adapter.findAll().size());
+    }
 }

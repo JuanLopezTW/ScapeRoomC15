@@ -16,6 +16,6 @@ public class StompPosicionNotifier implements PosicionNotifier {
 
     @Override
     public void notificar(String matchId, String equipoId, PosicionJugadorDto posicion) {
-        messaging.convertAndSend("/topic/match/" + matchId + "/team/" + equipoId + "/positions", posicion);
+        messaging.convertAndSend("/topic/partidas/" + matchId + "/equipos/" + equipoId + "/posiciones", posicion);
     }
 }
