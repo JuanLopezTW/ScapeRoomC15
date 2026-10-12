@@ -81,6 +81,13 @@ class GanarPartidaFlujoTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"x\":1,\"y\":1}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error", containsString("termino")));
+
+        // La sala sale del catalogo; el resultado sigue disponible
+        mvc.perform(get("/api/salas/{id}", matchId)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/salas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '" + matchId + "')]", hasSize(0)));
+        mvc.perform(get("/api/partidas/{m}/resultado", matchId)).andExpect(status().isOk());
     }
 
     @Test

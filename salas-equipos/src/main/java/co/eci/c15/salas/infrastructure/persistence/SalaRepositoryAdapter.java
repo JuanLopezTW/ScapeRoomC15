@@ -33,6 +33,11 @@ public class SalaRepositoryAdapter implements SalaRepository {
         return jpa.findAll().stream().map(this::toDomain).toList();
     }
 
+    @Override
+    public void delete(String id) {
+        jpa.deleteById(id);
+    }
+
     private Sala toDomain(SalaJpa e) {
         return Sala.reconstituir(e.getId(), e.getNombre(), e.getAnfitrionId(), e.getEstado(),
                 e.getNumEquipos(), e.getJugadoresPorEquipo(), e.getJugadores());

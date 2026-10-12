@@ -9,7 +9,8 @@ import java.util.List;
 
 /**
  * Catalogo de salas (HU-14.3): todas las salas, incluidas las que ya estan en partida (el
- * front las muestra con su estado), ordenadas por nombre sin importar mayusculas.
+ * front las muestra con su estado), ordenadas por nombre sin importar mayusculas. Las salas
+ * cuya partida termino ya no existen ({@link FinalizarPartidaUseCase}).
  */
 @Service
 public class ListarSalasUseCase {

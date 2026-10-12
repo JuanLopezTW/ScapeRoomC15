@@ -7,4 +7,5 @@ public interface SalaRepository {
     Sala save(Sala sala);
     Optional<Sala> findById(String id);
     List<Sala> findAll();
+    void delete(String id);
 }
