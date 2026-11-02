@@ -11,12 +11,12 @@ import static org.mockito.Mockito.*;
 class StompChatNotifierTest {
 
     @Test
-    void publicaElMensajeEnElTopicDeChatDeLaSala() {
+    void publicaElMensajeEnElTopicDeSuCanal() {
         SimpMessagingTemplate messaging = mock(SimpMessagingTemplate.class);
-        MensajeChatDto mensaje = new MensajeChatDto("m1", "s1", "ana", "hola", Instant.EPOCH);
+        MensajeChatDto mensaje = new MensajeChatDto("m1", "salas/s1", "ana", "hola", Instant.EPOCH);
 
         new StompChatNotifier(messaging).mensajeNuevo(mensaje);
 
-        verify(messaging).convertAndSend("/topic/salas/s1/chat", mensaje);
+        verify(messaging).convertAndSend("/topic/chat/salas/s1", mensaje);
     }
 }

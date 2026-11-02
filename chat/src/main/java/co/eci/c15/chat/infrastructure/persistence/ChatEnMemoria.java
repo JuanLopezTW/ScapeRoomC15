@@ -1,6 +1,6 @@
 package co.eci.c15.chat.infrastructure.persistence;
 
-import co.eci.c15.chat.domain.ChatSalaRepository;
+import co.eci.c15.chat.domain.ChatRepository;
 import co.eci.c15.chat.domain.MensajeChat;
 import org.springframework.stereotype.Repository;
 
@@ -10,17 +10,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** El chat de espera es efimero: vive en memoria y solo guarda los ultimos mensajes de cada sala. */
+/** El chat es efimero: vive en memoria y solo guarda los ultimos mensajes de cada canal. */
 @Repository
-public class ChatSalaEnMemoria implements ChatSalaRepository {
+public class ChatEnMemoria implements ChatRepository {
 
     public static final int MAX_MENSAJES = 50;
 
-    private final Map<String, Deque<MensajeChat>> porSala = new ConcurrentHashMap<>();
+    private final Map<String, Deque<MensajeChat>> porCanal = new ConcurrentHashMap<>();
 
     @Override
     public void guardar(MensajeChat mensaje) {
-        porSala.compute(mensaje.salaId(), (id, cola) -> {
+        porCanal.compute(mensaje.canal(), (id, cola) -> {
             Deque<MensajeChat> c = cola != null ? cola : new ArrayDeque<>();
             synchronized (c) {
                 c.addLast(mensaje);
@@ -31,8 +31,8 @@ public class ChatSalaEnMemoria implements ChatSalaRepository {
     }
 
     @Override
-    public List<MensajeChat> historial(String salaId) {
-        Deque<MensajeChat> cola = porSala.get(salaId);
+    public List<MensajeChat> historial(String canal) {
+        Deque<MensajeChat> cola = porCanal.get(canal);
         if (cola == null) return List.of();
         synchronized (cola) {
             return List.copyOf(cola);
@@ -40,7 +40,7 @@ public class ChatSalaEnMemoria implements ChatSalaRepository {
     }
 
     @Override
-    public void borrar(String salaId) {
-        porSala.remove(salaId);
+    public void borrar(String canal) {
+        porCanal.remove(canal);
     }
 }

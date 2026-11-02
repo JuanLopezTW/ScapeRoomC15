@@ -15,7 +15,7 @@ class MensajeChatTest {
         MensajeChat m = MensajeChat.crear("s1", "ana", "  hola equipo  ", AHORA);
 
         assertNotNull(m.id());
-        assertEquals("s1", m.salaId());
+        assertEquals("s1", m.canal());
         assertEquals("ana", m.userId());
         assertEquals("hola equipo", m.texto());
         assertEquals(AHORA, m.enviadoEn());

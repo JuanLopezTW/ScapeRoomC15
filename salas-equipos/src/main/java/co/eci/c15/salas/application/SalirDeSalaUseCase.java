@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.events.SalaCerradaEvent;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.EquipoRepository;
 import co.eci.c15.salas.domain.Sala;
@@ -45,6 +46,7 @@ public class SalirDeSalaUseCase {
             salas.delete(salaId);
             notifier.cerrada(salaId);
             events.publishEvent(new SalaActualizadaEvent(salaId));
+            events.publishEvent(new SalaCerradaEvent(salaId));
             return Resultado.SALA_CERRADA;
         }
 

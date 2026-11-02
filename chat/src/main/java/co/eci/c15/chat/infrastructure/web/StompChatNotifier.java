@@ -5,7 +5,7 @@ import co.eci.c15.chat.application.MensajeChatDto;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
-/** Publica cada mensaje del chat de espera en /topic/salas/{salaId}/chat. */
+/** Publica cada mensaje en /topic/chat/{canal}. */
 @Component
 public class StompChatNotifier implements ChatNotifier {
 
@@ -17,6 +17,6 @@ public class StompChatNotifier implements ChatNotifier {
 
     @Override
     public void mensajeNuevo(MensajeChatDto mensaje) {
-        messaging.convertAndSend("/topic/salas/" + mensaje.salaId() + "/chat", mensaje);
+        messaging.convertAndSend("/topic/chat/" + mensaje.canal(), mensaje);
     }
 }

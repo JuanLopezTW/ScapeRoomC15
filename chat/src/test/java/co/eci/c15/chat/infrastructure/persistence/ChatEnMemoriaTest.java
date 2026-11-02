@@ -12,9 +12,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ChatSalaEnMemoriaTest {
+class ChatEnMemoriaTest {
 
-    private final ChatSalaEnMemoria repo = new ChatSalaEnMemoria();
+    private final ChatEnMemoria repo = new ChatEnMemoria();
 
     private static MensajeChat mensaje(String salaId, String texto) {
         return MensajeChat.crear(salaId, "ana", texto, Instant.EPOCH);
@@ -35,12 +35,12 @@ class ChatSalaEnMemoriaTest {
 
     @Test
     void soloConservaLosUltimosMensajes() {
-        for (int i = 0; i < ChatSalaEnMemoria.MAX_MENSAJES + 5; i++) repo.guardar(mensaje("s1", "m" + i));
+        for (int i = 0; i < ChatEnMemoria.MAX_MENSAJES + 5; i++) repo.guardar(mensaje("s1", "m" + i));
 
         List<MensajeChat> historial = repo.historial("s1");
-        assertEquals(ChatSalaEnMemoria.MAX_MENSAJES, historial.size());
+        assertEquals(ChatEnMemoria.MAX_MENSAJES, historial.size());
         assertEquals("m5", historial.get(0).texto());
-        assertEquals("m" + (ChatSalaEnMemoria.MAX_MENSAJES + 4), historial.get(historial.size() - 1).texto());
+        assertEquals("m" + (ChatEnMemoria.MAX_MENSAJES + 4), historial.get(historial.size() - 1).texto());
     }
 
     @Test

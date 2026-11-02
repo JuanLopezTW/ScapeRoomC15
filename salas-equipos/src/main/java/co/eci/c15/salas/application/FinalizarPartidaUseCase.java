@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.events.SalaCerradaEvent;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.EquipoRepository;
 import co.eci.c15.salas.domain.SalaRepository;
@@ -32,6 +33,7 @@ public class FinalizarPartidaUseCase {
         equipos.findBySalaId(salaId).stream().map(Equipo::getId).forEach(equipos::delete);
         salas.delete(salaId);
         events.publishEvent(new SalaActualizadaEvent(salaId));
+        events.publishEvent(new SalaCerradaEvent(salaId));
         return true;
     }
 }

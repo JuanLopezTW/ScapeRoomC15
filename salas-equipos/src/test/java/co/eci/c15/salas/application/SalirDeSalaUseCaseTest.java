@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.events.SalaCerradaEvent;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.Sala;
 import co.eci.c15.salas.domain.SalaRepository;
@@ -55,6 +56,7 @@ class SalirDeSalaUseCaseTest {
         verify(salas).save(sala);
         verify(events).publishEvent(new SalaActualizadaEvent(sala.getId()));
         verify(salas, never()).delete(any());
+        verify(events, never()).publishEvent(any(SalaCerradaEvent.class));
         verifyNoInteractions(notifier);
     }
 
@@ -66,6 +68,7 @@ class SalirDeSalaUseCaseTest {
         assertTrue(equipos.findBySalaId(sala.getId()).isEmpty());
         verify(notifier).cerrada(sala.getId());
         verify(events).publishEvent(new SalaActualizadaEvent(sala.getId()));
+        verify(events).publishEvent(new SalaCerradaEvent(sala.getId()));
     }
 
     @Test
