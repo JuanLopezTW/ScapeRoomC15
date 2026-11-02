@@ -12,11 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.Map;
 
 @RestController
@@ -34,12 +33,9 @@ public class InventarioController {
     /** Recolecta un objeto del mapa y lo agrega al inventario de todo el equipo. */
     @PostMapping("/objetos/{componenteMapaId}/recoleccion")
     public ResponseEntity<?> recolectar(@PathVariable("matchId") String matchId,
-                                        @PathVariable("componenteMapaId") String componenteMapaId,
-                                        @RequestBody Map<String, String> body) {
-        String userId = body.get("userId");
-        if (userId == null || userId.isBlank()) return error(HttpStatus.BAD_REQUEST, "El userId es obligatorio");
+                                        @PathVariable("componenteMapaId") String componenteMapaId, Principal yo) {
         try {
-            return ResponseEntity.ok(recolectar.ejecutar(matchId, userId, componenteMapaId));
+            return ResponseEntity.ok(recolectar.ejecutar(matchId, yo.getName(), componenteMapaId));
         } catch (JugadorNoRegistradoException | ObjetoNoRecolectableException e) {
             return error(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (ObjetoLejosException e) {
@@ -52,10 +48,9 @@ public class InventarioController {
     /** Inventario actual del equipo (para pintarlo al entrar o recargar). */
     @GetMapping("/equipos/{equipoId}/inventario")
     public ResponseEntity<?> inventario(@PathVariable("matchId") String matchId,
-                                        @PathVariable("equipoId") String equipoId,
-                                        @RequestParam("userId") String userId) {
+                                        @PathVariable("equipoId") String equipoId, Principal yo) {
         try {
-            return ResponseEntity.ok(consultar.ejecutar(matchId, equipoId, userId));
+            return ResponseEntity.ok(consultar.ejecutar(matchId, equipoId, yo.getName()));
         } catch (JugadorNoRegistradoException e) {
             return error(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (AccesoEquipoDenegadoException e) {

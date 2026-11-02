@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.Map;
 
 @RestController
@@ -25,14 +26,9 @@ public class AcertijoController {
     /** Abre el acertijo (Enter junto al punto brillante) y lo bloquea para el resto del equipo. */
     @PostMapping
     public ResponseEntity<?> abrir(@PathVariable("matchId") String matchId,
-                                   @PathVariable("componenteMapaId") String componenteMapaId,
-                                   @RequestBody Map<String, String> body) {
-        String userId = body.get("userId");
-        if (userId == null || userId.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "El userId es obligatorio"));
-        }
+                                   @PathVariable("componenteMapaId") String componenteMapaId, Principal yo) {
         try {
-            return ResponseEntity.ok(useCase.ejecutar(matchId, componenteMapaId, userId));
+            return ResponseEntity.ok(useCase.ejecutar(matchId, componenteMapaId, yo.getName()));
         } catch (JugadorNoRegistradoException | ComponenteSinAcertijoException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         } catch (AcertijoBloqueadoException | OtroAcertijoAbiertoException e) {
@@ -45,10 +41,9 @@ public class AcertijoController {
     /** Cierra el acertijo y libera el bloqueo. */
     @DeleteMapping
     public ResponseEntity<?> cerrar(@PathVariable("matchId") String matchId,
-                                    @PathVariable("componenteMapaId") String componenteMapaId,
-                                    @RequestParam("userId") String userId) {
+                                    @PathVariable("componenteMapaId") String componenteMapaId, Principal yo) {
         try {
-            useCase.cerrar(matchId, componenteMapaId, userId);
+            useCase.cerrar(matchId, componenteMapaId, yo.getName());
             return ResponseEntity.noContent().build();
         } catch (JugadorNoRegistradoException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));

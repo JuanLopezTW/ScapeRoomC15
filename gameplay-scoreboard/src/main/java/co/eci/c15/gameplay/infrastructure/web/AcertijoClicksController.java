@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.function.Supplier;
 import java.util.Map;
 
@@ -35,26 +35,22 @@ public class AcertijoClicksController {
     @PostMapping
     public ResponseEntity<?> click(@PathVariable("matchId") String matchId,
                                    @PathVariable("componenteMapaId") String componenteMapaId,
-                                   @RequestBody Map<String, String> body) {
-        String userId = body.get("userId");
-        if (userId == null || userId.isBlank()) return error(HttpStatus.BAD_REQUEST, "El userId es obligatorio");
-        return responder(() -> useCase.click(matchId, componenteMapaId, userId, body.get("elementoId"), body.get("valor")));
+                                   @RequestBody Map<String, String> body, Principal yo) {
+        return responder(() -> useCase.click(matchId, componenteMapaId, yo.getName(), body.get("elementoId"), body.get("valor")));
     }
 
     /** Estado actual de lo ingresado por el equipo. */
     @GetMapping
     public ResponseEntity<?> consultar(@PathVariable("matchId") String matchId,
-                                       @PathVariable("componenteMapaId") String componenteMapaId,
-                                       @RequestParam("userId") String userId) {
-        return responder(() -> useCase.consultar(matchId, componenteMapaId, userId));
+                                       @PathVariable("componenteMapaId") String componenteMapaId, Principal yo) {
+        return responder(() -> useCase.consultar(matchId, componenteMapaId, yo.getName()));
     }
 
     /** Borra lo ingresado para empezar de nuevo. */
     @DeleteMapping
     public ResponseEntity<?> reiniciar(@PathVariable("matchId") String matchId,
-                                       @PathVariable("componenteMapaId") String componenteMapaId,
-                                       @RequestParam("userId") String userId) {
-        return responder(() -> useCase.reiniciar(matchId, componenteMapaId, userId));
+                                       @PathVariable("componenteMapaId") String componenteMapaId, Principal yo) {
+        return responder(() -> useCase.reiniciar(matchId, componenteMapaId, yo.getName()));
     }
 
     private ResponseEntity<?> responder(Supplier<Object> accion) {

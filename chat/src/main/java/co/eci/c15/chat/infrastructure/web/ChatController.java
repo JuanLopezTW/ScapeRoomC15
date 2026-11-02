@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -34,41 +34,41 @@ public class ChatController {
     }
 
     @PostMapping("/global")
-    public ResponseEntity<?> enviarGlobal(@RequestBody Map<String, String> body) {
-        return responder(HttpStatus.CREATED, () -> chat.enviarGlobal(body.get("userId"), body.get("texto")));
+    public ResponseEntity<?> enviarGlobal(@RequestBody Map<String, String> body, Principal yo) {
+        return responder(HttpStatus.CREATED, () -> chat.enviarGlobal(yo.getName(), body.get("texto")));
     }
 
     @GetMapping("/salas/{salaId}")
-    public ResponseEntity<?> historialSala(@PathVariable("salaId") String salaId,
-                                           @RequestParam(value = "userId", required = false) String userId) {
-        return responder(HttpStatus.OK, () -> chat.historialSala(salaId, userId));
+    public ResponseEntity<?> historialSala(@PathVariable("salaId") String salaId, Principal yo) {
+        return responder(HttpStatus.OK, () -> chat.historialSala(salaId, yo.getName()));
     }
 
     @PostMapping("/salas/{salaId}")
-    public ResponseEntity<?> enviarSala(@PathVariable("salaId") String salaId, @RequestBody Map<String, String> body) {
-        return responder(HttpStatus.CREATED, () -> chat.enviarSala(salaId, body.get("userId"), body.get("texto")));
+    public ResponseEntity<?> enviarSala(@PathVariable("salaId") String salaId, @RequestBody Map<String, String> body,
+                                           Principal yo) {
+        return responder(HttpStatus.CREATED, () -> chat.enviarSala(salaId, yo.getName(), body.get("texto")));
     }
 
     @GetMapping("/partidas/{matchId}")
-    public ResponseEntity<?> historialPartida(@PathVariable("matchId") String matchId,
-                                              @RequestParam(value = "userId", required = false) String userId) {
-        return responder(HttpStatus.OK, () -> chat.historialPartida(matchId, userId));
+    public ResponseEntity<?> historialPartida(@PathVariable("matchId") String matchId, Principal yo) {
+        return responder(HttpStatus.OK, () -> chat.historialPartida(matchId, yo.getName()));
     }
 
     @PostMapping("/partidas/{matchId}")
-    public ResponseEntity<?> enviarPartida(@PathVariable("matchId") String matchId, @RequestBody Map<String, String> body) {
-        return responder(HttpStatus.CREATED, () -> chat.enviarPartida(matchId, body.get("userId"), body.get("texto")));
+    public ResponseEntity<?> enviarPartida(@PathVariable("matchId") String matchId, @RequestBody Map<String, String> body,
+                                           Principal yo) {
+        return responder(HttpStatus.CREATED, () -> chat.enviarPartida(matchId, yo.getName(), body.get("texto")));
     }
 
     @GetMapping("/partidas/{matchId}/equipo")
-    public ResponseEntity<?> historialEquipo(@PathVariable("matchId") String matchId,
-                                             @RequestParam(value = "userId", required = false) String userId) {
-        return responder(HttpStatus.OK, () -> chat.historialEquipo(matchId, userId));
+    public ResponseEntity<?> historialEquipo(@PathVariable("matchId") String matchId, Principal yo) {
+        return responder(HttpStatus.OK, () -> chat.historialEquipo(matchId, yo.getName()));
     }
 
     @PostMapping("/partidas/{matchId}/equipo")
-    public ResponseEntity<?> enviarEquipo(@PathVariable("matchId") String matchId, @RequestBody Map<String, String> body) {
-        return responder(HttpStatus.CREATED, () -> chat.enviarEquipo(matchId, body.get("userId"), body.get("texto")));
+    public ResponseEntity<?> enviarEquipo(@PathVariable("matchId") String matchId, @RequestBody Map<String, String> body,
+                                           Principal yo) {
+        return responder(HttpStatus.CREATED, () -> chat.enviarEquipo(matchId, yo.getName(), body.get("texto")));
     }
 
     private static ResponseEntity<?> responder(HttpStatus ok, Supplier<Object> accion) {

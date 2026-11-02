@@ -24,7 +24,7 @@ class UsuarioRepositoryAdapterTest {
 
     @Test
     void findByUsernameConservaElIdGuardado() {
-        Usuario usuario = adapter.save(Usuario.crear("jugador1"));
+        Usuario usuario = adapter.save(Usuario.registrar("auth0|jugador1", "jugador1"));
         em.flush();
         em.clear();
 
@@ -35,7 +35,7 @@ class UsuarioRepositoryAdapterTest {
 
     @Test
     void existsByUsername() {
-        adapter.save(Usuario.crear("jugador1"));
+        adapter.save(Usuario.registrar("auth0|jugador1", "jugador1"));
         assertTrue(adapter.existsByUsername("jugador1"));
         assertFalse(adapter.existsByUsername("otro"));
         assertTrue(adapter.findByUsername("otro").isEmpty());
@@ -43,9 +43,9 @@ class UsuarioRepositoryAdapterTest {
 
     @Test
     void findAllByIdOmiteLosQueNoExisten() {
-        Usuario juan = adapter.save(Usuario.crear("juan"));
-        Usuario laura = adapter.save(Usuario.crear("laura"));
-        adapter.save(Usuario.crear("otro"));
+        Usuario juan = adapter.save(Usuario.registrar("auth0|juan", "juan"));
+        Usuario laura = adapter.save(Usuario.registrar("auth0|laura", "laura"));
+        adapter.save(Usuario.registrar("auth0|otro", "otro"));
         em.flush();
         em.clear();
 

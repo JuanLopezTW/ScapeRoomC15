@@ -1,7 +1,6 @@
 package co.eci.c15.auth.domain;
 
 import java.util.Objects;
-import java.util.UUID;
 
 public final class Usuario {
 
@@ -13,9 +12,10 @@ public final class Usuario {
         this.username = username;
     }
 
-    public static Usuario crear(String username) {
+    /** Usuario nuevo: su id es el identificador que le da el proveedor de identidad. */
+    public static Usuario registrar(String id, String username) {
         validarUsername(username);
-        return new Usuario(UUID.randomUUID().toString(), username);
+        return new Usuario(Objects.requireNonNull(id), username);
     }
 
     /** Reconstruye un usuario ya existente (desde persistencia) conservando su id. */

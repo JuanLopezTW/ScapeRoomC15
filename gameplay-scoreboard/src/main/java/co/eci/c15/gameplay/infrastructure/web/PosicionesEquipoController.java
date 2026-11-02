@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.Map;
 
 @RestController
@@ -31,10 +31,9 @@ public class PosicionesEquipoController {
     /** Posiciones de los companeros de equipo; solo las puede ver un miembro del mismo equipo. */
     @GetMapping("/equipos/{equipoId}/posiciones")
     public ResponseEntity<?> posiciones(@PathVariable("matchId") String matchId,
-                                        @PathVariable("equipoId") String equipoId,
-                                        @RequestParam("userId") String userId) {
+                                        @PathVariable("equipoId") String equipoId, Principal yo) {
         try {
-            return ResponseEntity.ok(consultar.ejecutar(matchId, equipoId, userId));
+            return ResponseEntity.ok(consultar.ejecutar(matchId, equipoId, yo.getName()));
         } catch (JugadorNoRegistradoException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         } catch (AccesoEquipoDenegadoException e) {
@@ -45,7 +44,8 @@ public class PosicionesEquipoController {
     /** Desconexion explicita (salir de la partida). */
     @DeleteMapping("/jugadores/{userId}")
     public ResponseEntity<Void> desconectar(@PathVariable("matchId") String matchId,
-                                            @PathVariable("userId") String userId) {
+                                            @PathVariable("userId") String userId, Principal yo) {
+        if (!userId.equals(yo.getName())) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         desconectar.ejecutar(matchId, userId);
         return ResponseEntity.noContent().build();
     }

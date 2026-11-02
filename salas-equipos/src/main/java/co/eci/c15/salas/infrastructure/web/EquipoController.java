@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.Map;
 
 @RestController
@@ -22,9 +23,9 @@ public class EquipoController {
     }
 
     @PostMapping("/{equipoId}/miembros")
-    public ResponseEntity<?> unirse(@PathVariable("equipoId") String equipoId, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> unirse(@PathVariable("equipoId") String equipoId, Principal yo) {
         try {
-            EquipoDto dto = unirse.ejecutar(equipoId, body.get("userId"));
+            EquipoDto dto = unirse.ejecutar(equipoId, yo.getName());
             return ResponseEntity.ok(dto);
         } catch (EquipoLlenoException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));

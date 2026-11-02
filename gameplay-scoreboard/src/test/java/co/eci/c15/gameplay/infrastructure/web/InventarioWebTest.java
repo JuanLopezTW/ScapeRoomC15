@@ -50,19 +50,11 @@ class InventarioWebTest {
     void recolectarDevuelveElInventarioActualizado() throws Exception {
         when(recolectar.ejecutar("m1", "ana", "llave-1")).thenReturn(INV);
 
-        mvc.perform(post(RECOLECTAR).contentType(MediaType.APPLICATION_JSON).content("{\"userId\":\"ana\"}"))
+        mvc.perform(post(RECOLECTAR).principal(() -> "ana").contentType(MediaType.APPLICATION_JSON).content("{\"userId\":\"ana\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.equipoId").value("e1"))
                 .andExpect(jsonPath("$.objetos[0].id").value("llave-1"))
                 .andExpect(jsonPath("$.objetos[0].nombre").value("Llave 1"));
-    }
-
-    @Test
-    void sinUserIdEsPeticionInvalida() throws Exception {
-        mvc.perform(post(RECOLECTAR).contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").exists());
-        verifyNoInteractions(recolectar);
     }
 
     @Test
@@ -75,7 +67,7 @@ class InventarioWebTest {
 
         int[] esperados = {404, 404, 400, 409};
         for (int esperado : esperados) {
-            mvc.perform(post(RECOLECTAR).contentType(MediaType.APPLICATION_JSON).content("{\"userId\":\"ana\"}"))
+            mvc.perform(post(RECOLECTAR).principal(() -> "ana").contentType(MediaType.APPLICATION_JSON).content("{\"userId\":\"ana\"}"))
                     .andExpect(status().is(esperado))
                     .andExpect(jsonPath("$.error").exists());
         }
@@ -87,11 +79,11 @@ class InventarioWebTest {
         when(consultar.ejecutar("m1", "e1", "carla")).thenThrow(new AccesoEquipoDenegadoException("carla", "e1"));
         when(consultar.ejecutar("m1", "e1", "intruso")).thenThrow(new JugadorNoRegistradoException("m1", "intruso"));
 
-        mvc.perform(get(INVENTARIO).param("userId", "ana"))
+        mvc.perform(get(INVENTARIO).principal(() -> "ana"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.objetos.length()").value(1));
-        mvc.perform(get(INVENTARIO).param("userId", "carla")).andExpect(status().isForbidden());
-        mvc.perform(get(INVENTARIO).param("userId", "intruso")).andExpect(status().isNotFound());
+        mvc.perform(get(INVENTARIO).principal(() -> "carla")).andExpect(status().isForbidden());
+        mvc.perform(get(INVENTARIO).principal(() -> "intruso")).andExpect(status().isNotFound());
     }
 
     @Test

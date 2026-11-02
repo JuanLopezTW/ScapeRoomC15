@@ -47,18 +47,11 @@ class AcertijoClicksControllerTest {
         when(useCase.click("m1", "acertijo-1", "ana", "lista", "rojo"))
                 .thenReturn(new EntradaAcertijoDto("acertijo-1", List.of("rojo"), false));
 
-        mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post(URL).principal(() -> "ana").contentType(MediaType.APPLICATION_JSON)
                         .content(cuerpo("{\"userId\":\"ana\",\"elementoId\":\"lista\",\"valor\":\"rojo\"}")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.entrada[0]").value("rojo"))
                 .andExpect(jsonPath("$.resuelto").value(false));
-    }
-
-    @Test
-    void sinUserIdEsPeticionInvalida() throws Exception {
-        mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content("{\"elementoId\":\"lista\"}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").exists());
     }
 
     @Test
@@ -75,7 +68,7 @@ class AcertijoClicksControllerTest {
 
         int[] esperados = {404, 404, 409, 409, 409, 400, 400};
         for (int esperado : esperados) {
-            mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content(ok))
+            mvc.perform(post(URL).principal(() -> "ana").contentType(MediaType.APPLICATION_JSON).content(ok))
                     .andExpect(status().is(esperado))
                     .andExpect(jsonPath("$.error").exists());
         }
@@ -88,10 +81,10 @@ class AcertijoClicksControllerTest {
         when(useCase.reiniciar("m1", "acertijo-1", "ana"))
                 .thenReturn(new EntradaAcertijoDto("acertijo-1", List.of(), false));
 
-        mvc.perform(get(URL).param("userId", "ana"))
+        mvc.perform(get(URL).principal(() -> "ana"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.entrada[1]").value("azul"));
-        mvc.perform(delete(URL).param("userId", "ana"))
+        mvc.perform(delete(URL).principal(() -> "ana"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.entrada").isEmpty());
         verify(useCase).reiniciar("m1", "acertijo-1", "ana");

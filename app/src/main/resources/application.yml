@@ -1,4 +1,11 @@
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Proveedor de identidad (Auth0): no son secretos
+          issuer-uri: ${AUTH0_ISSUER:https://escaperoomc15.us.auth0.com/}
+          audiences: ${AUTH0_AUDIENCE:https://api.escaperoomc15}
   application:
     name: escaperoom-c15
   datasource:

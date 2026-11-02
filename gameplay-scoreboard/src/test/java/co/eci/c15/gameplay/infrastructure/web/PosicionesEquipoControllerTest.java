@@ -35,7 +35,7 @@ class PosicionesEquipoControllerTest {
 
     @Test
     void miembroDelEquipoVeLasPosicionesDeSusCompaneros() throws Exception {
-        mvc.perform(get("/api/partidas/p1/equipos/e1/posiciones").param("userId", "a1"))
+        mvc.perform(get("/api/partidas/p1/equipos/e1/posiciones").principal(() -> "a1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[1].userId").value("a2"))
@@ -45,21 +45,21 @@ class PosicionesEquipoControllerTest {
 
     @Test
     void jugadorDeOtroEquipoRecibe403() throws Exception {
-        mvc.perform(get("/api/partidas/p1/equipos/e1/posiciones").param("userId", "b1"))
+        mvc.perform(get("/api/partidas/p1/equipos/e1/posiciones").principal(() -> "b1"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").exists());
     }
 
     @Test
     void jugadorDesconocidoRecibe404() throws Exception {
-        mvc.perform(get("/api/partidas/p1/equipos/e1/posiciones").param("userId", "nadie"))
+        mvc.perform(get("/api/partidas/p1/equipos/e1/posiciones").principal(() -> "nadie"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void desconexionExplicitaSacaAlJugador() throws Exception {
-        mvc.perform(delete("/api/partidas/p1/jugadores/a1")).andExpect(status().isNoContent());
+        mvc.perform(delete("/api/partidas/p1/jugadores/a1").principal(() -> "a1")).andExpect(status().isNoContent());
         assertTrue(jugadores.find("p1", "a1").isEmpty());
-        mvc.perform(delete("/api/partidas/p1/jugadores/a1")).andExpect(status().isNoContent());
+        mvc.perform(delete("/api/partidas/p1/jugadores/a1").principal(() -> "a1")).andExpect(status().isNoContent());
     }
 }

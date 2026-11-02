@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.Map;
 
 @RestController
@@ -29,7 +30,10 @@ public class MovimientoController {
     @PostMapping("/movimiento")
     public ResponseEntity<?> mover(@PathVariable("matchId") String matchId,
                                    @PathVariable("userId") String userId,
-                                   @RequestBody MoverRequest body) {
+                                   @RequestBody MoverRequest body, Principal yo) {
+        if (!userId.equals(yo.getName())) {
+            return ResponseEntity.status(403).body(Map.of("error", "Solo puedes mover a tu propio personaje"));
+        }
         try {
             MovimientoDto dto = mover.ejecutar(matchId, userId, new Posicion(body.x(), body.y()));
             return ResponseEntity.ok(dto);

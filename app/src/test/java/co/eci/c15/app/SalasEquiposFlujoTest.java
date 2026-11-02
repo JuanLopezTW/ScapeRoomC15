@@ -170,9 +170,6 @@ class SalasEquiposFlujoTest {
         mvc.perform(post("/api/salas/{id}/listo", "no-existe").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":\"ana\"}"))
                 .andExpect(status().isNotFound());
-
-        mvc.perform(delete("/api/salas/{id}/listo", salaId))
-                .andExpect(status().isBadRequest());
     }
 
     private String crearSala(String nombre) throws Exception {

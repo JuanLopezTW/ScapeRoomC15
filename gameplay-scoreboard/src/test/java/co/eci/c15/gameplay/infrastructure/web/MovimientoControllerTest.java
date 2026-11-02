@@ -45,7 +45,7 @@ class MovimientoControllerTest {
 
     @Test
     void movimientoValidoDevuelveRuta() throws Exception {
-        mvc.perform(post("/api/partidas/p1/jugadores/u1/movimiento")
+        mvc.perform(post("/api/partidas/p1/jugadores/u1/movimiento").principal(() -> "u1")
                         .contentType(MediaType.APPLICATION_JSON).content(cuerpo(libre.x(), libre.y())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value("u1"))
@@ -55,7 +55,7 @@ class MovimientoControllerTest {
 
     @Test
     void clickFueraDelMapaDevuelve400() throws Exception {
-        mvc.perform(post("/api/partidas/p1/jugadores/u1/movimiento")
+        mvc.perform(post("/api/partidas/p1/jugadores/u1/movimiento").principal(() -> "u1")
                         .contentType(MediaType.APPLICATION_JSON).content(cuerpo(50, 50)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").exists());
@@ -64,14 +64,14 @@ class MovimientoControllerTest {
     @Test
     void clickSobreComponenteDevuelve400() throws Exception {
         Posicion ocupada = mapa.getComponentes().get(0).posicion();
-        mvc.perform(post("/api/partidas/p1/jugadores/u1/movimiento")
+        mvc.perform(post("/api/partidas/p1/jugadores/u1/movimiento").principal(() -> "u1")
                         .contentType(MediaType.APPLICATION_JSON).content(cuerpo(ocupada.x(), ocupada.y())))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void jugadorDesconocidoDevuelve404() throws Exception {
-        mvc.perform(post("/api/partidas/p1/jugadores/nadie/movimiento")
+        mvc.perform(post("/api/partidas/p1/jugadores/nadie/movimiento").principal(() -> "nadie")
                         .contentType(MediaType.APPLICATION_JSON).content(cuerpo(libre.x(), libre.y())))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").exists());

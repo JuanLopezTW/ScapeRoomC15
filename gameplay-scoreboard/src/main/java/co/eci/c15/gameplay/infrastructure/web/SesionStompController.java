@@ -6,6 +6,8 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
 
+import java.security.Principal;
+
 @Controller
 public class SesionStompController {
 
@@ -15,11 +17,11 @@ public class SesionStompController {
         this.sesiones = sesiones;
     }
 
-    /** El cliente avisa a que jugador pertenece su sesion: SEND /app/partidas/{matchId}/jugadores/{userId}/sesion. */
-    @MessageMapping("/partidas/{matchId}/jugadores/{userId}/sesion")
+    /** El cliente avisa en que partida esta esta conexion; el jugador sale del token: SEND /app/partidas/{matchId}/sesion. */
+    @MessageMapping("/partidas/{matchId}/sesion")
     public void registrarSesion(@DestinationVariable("matchId") String matchId,
-                                @DestinationVariable("userId") String userId,
+                                Principal yo,
                                 @Header("simpSessionId") String sessionId) {
-        sesiones.registrar(sessionId, matchId, userId);
+        sesiones.registrar(sessionId, matchId, yo.getName());
     }
 }

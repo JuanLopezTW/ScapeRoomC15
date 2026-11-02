@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +23,7 @@ import java.util.Map;
 @RequestMapping("/api/partidas/{matchId}/acertijos/{componenteMapaId}/solucion")
 public class AcertijoSolucionController {
 
-    public record SolucionRequest(String userId, List<String> respuesta) {}
+    public record SolucionRequest(List<String> respuesta) {}
 
     private final ValidarSolucionUseCase useCase;
 
@@ -34,10 +35,9 @@ public class AcertijoSolucionController {
     @PostMapping
     public ResponseEntity<?> enviar(@PathVariable("matchId") String matchId,
                                     @PathVariable("componenteMapaId") String componenteMapaId,
-                                    @RequestBody SolucionRequest body) {
-        if (body.userId() == null || body.userId().isBlank()) return error(HttpStatus.BAD_REQUEST, "El userId es obligatorio");
+                                    @RequestBody SolucionRequest body, Principal yo) {
         try {
-            return ResponseEntity.ok(useCase.ejecutar(matchId, componenteMapaId, body.userId(), body.respuesta()));
+            return ResponseEntity.ok(useCase.ejecutar(matchId, componenteMapaId, yo.getName(), body.respuesta()));
         } catch (JugadorNoRegistradoException | ComponenteSinAcertijoException | SolucionNoDisponibleException e) {
             return error(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (AcertijoBloqueadoException | AcertijoNoAbiertoException | AcertijoYaResueltoException e) {

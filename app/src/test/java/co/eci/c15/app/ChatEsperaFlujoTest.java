@@ -112,8 +112,8 @@ class ChatEsperaFlujoTest {
 
     @Test
     void elGlobalEsParaLosUsuariosRegistrados() throws Exception {
-        String userId = json.readTree(mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"chat_global\"}"))
+        String userId = json.readTree(mvc.perform(post("/api/perfil").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":\"auth0|chat-global\",\"username\":\"chat_global\"}"))
                 .andReturn().getResponse().getContentAsString()).get("userId").asText();
 
         enviar("/api/chat/global", userId, "hola mundo").andExpect(status().isCreated());

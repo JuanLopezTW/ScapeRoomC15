@@ -55,7 +55,7 @@ class DesconexionSalaTest {
 
     @Test
     void elInvitadoSaleDeUnaSinTiempoDeGracia() {
-        controller.registrarSesion("s1", "ana", "sesion-1");
+        controller.registrarSesion("s1", () -> "ana", "sesion-1");
 
         listener.onDisconnect(evento("sesion-1"));
 
@@ -65,7 +65,7 @@ class DesconexionSalaTest {
 
     @Test
     void elAnfitrionNoSaleDeUnaSinoCuandoPasaLaGracia() {
-        controller.registrarSesion("s1", "host", "sesion-1");
+        controller.registrarSesion("s1", () -> "host", "sesion-1");
 
         listener.onDisconnect(evento("sesion-1"));
         verify(salir, never()).ejecutar(anyString(), anyString());
@@ -76,10 +76,10 @@ class DesconexionSalaTest {
 
     @Test
     void siElAnfitrionVuelveDentroDeLaGraciaNoSale() {
-        controller.registrarSesion("s1", "host", "sesion-1");
+        controller.registrarSesion("s1", () -> "host", "sesion-1");
         listener.onDisconnect(evento("sesion-1"));
 
-        controller.registrarSesion("s1", "host", "sesion-nueva");
+        controller.registrarSesion("s1", () -> "host", "sesion-nueva");
         pasaLaGracia(1);
 
         verify(salir, never()).ejecutar(anyString(), anyString());
@@ -95,7 +95,7 @@ class DesconexionSalaTest {
 
     @Test
     void laSesionSoloSeProcesaUnaVez() {
-        controller.registrarSesion("s1", "ana", "sesion-1");
+        controller.registrarSesion("s1", () -> "ana", "sesion-1");
 
         listener.onDisconnect(evento("sesion-1"));
         listener.onDisconnect(evento("sesion-1"));
@@ -105,8 +105,8 @@ class DesconexionSalaTest {
 
     @Test
     void conOtraPestañaAbiertaEnLaSalaNoSale() {
-        controller.registrarSesion("s1", "ana", "sesion-1");
-        controller.registrarSesion("s1", "ana", "sesion-2");
+        controller.registrarSesion("s1", () -> "ana", "sesion-1");
+        controller.registrarSesion("s1", () -> "ana", "sesion-2");
 
         listener.onDisconnect(evento("sesion-1"));
         verify(salir, never()).ejecutar(anyString(), anyString());

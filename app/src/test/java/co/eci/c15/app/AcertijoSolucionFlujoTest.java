@@ -123,8 +123,6 @@ class AcertijoSolucionFlujoTest {
                 .content("{\"userId\":\"eva\"}")).andExpect(status().isNotFound());
         mvc.perform(post("/api/partidas/{m}/acertijos/acertijo-1/solucion", match).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"userId\":\"intruso\"}")).andExpect(status().isNotFound());
-        mvc.perform(post("/api/partidas/{m}/acertijos/acertijo-1/solucion", match).contentType(MediaType.APPLICATION_JSON)
-                .content("{}")).andExpect(status().isBadRequest());
     }
 
     private ResultActions solucion(String userId, String respuestaJson) throws Exception {

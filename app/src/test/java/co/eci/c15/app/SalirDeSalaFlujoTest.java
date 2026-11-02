@@ -45,7 +45,7 @@ class SalirDeSalaFlujoTest {
         String salaId = salaConJugadores("Lobby jugador", "ana", "beto");
         String equipoId = primerEquipo(salaId);
         unirseAEquipo(equipoId, "beto");
-        sesiones.registrarSesion(salaId, "beto", "sesion-beto");
+        sesiones.registrarSesion(salaId, () -> "beto", "sesion-beto");
 
         desconectar("sesion-beto");
 
@@ -60,7 +60,7 @@ class SalirDeSalaFlujoTest {
     @Test
     void siElAnfitrionCierraLaPaginaLaSalaDesaparece() throws Exception {
         String salaId = salaConJugadores("Lobby anfitrion", "ana", "beto");
-        sesiones.registrarSesion(salaId, "ana", "sesion-ana");
+        sesiones.registrarSesion(salaId, () -> "ana", "sesion-ana");
 
         desconectar("sesion-ana");
 
@@ -75,10 +75,10 @@ class SalirDeSalaFlujoTest {
     @Test
     void siElAnfitrionVuelveDentroDeLaGraciaLaSalaSigueYSusJugadoresTambien() throws Exception {
         String salaId = salaConJugadores("Lobby corte", "ana", "beto");
-        sesiones.registrarSesion(salaId, "ana", "sesion-ana-1");
+        sesiones.registrarSesion(salaId, () -> "ana", "sesion-ana-1");
 
         desconectar("sesion-ana-1");
-        sesiones.registrarSesion(salaId, "ana", "sesion-ana-2");
+        sesiones.registrarSesion(salaId, () -> "ana", "sesion-ana-2");
         Thread.sleep(600); // mas que la gracia de los tests
 
         mvc.perform(get("/api/salas/{id}", salaId))

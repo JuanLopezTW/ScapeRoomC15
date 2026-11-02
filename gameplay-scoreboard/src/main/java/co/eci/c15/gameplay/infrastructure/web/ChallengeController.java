@@ -8,18 +8,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
 import java.util.Map;
 
 /** Hero vs Executioner challenge (HU-44.5). Live scores go to /topic/partidas/{matchId}/reto. */
 @RestController
 @RequestMapping("/api/partidas/{matchId}/reto")
 public class ChallengeController {
-
-    public record ClickRequest(String userId) {}
 
     private final HeroVillainChallengeService challenges;
 
@@ -28,12 +26,9 @@ public class ChallengeController {
     }
 
     @PostMapping("/clicks")
-    public ResponseEntity<?> click(@PathVariable("matchId") String matchId, @RequestBody ClickRequest body) {
-        if (body == null || body.userId() == null || body.userId().isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "El userId es obligatorio"));
-        }
+    public ResponseEntity<?> click(@PathVariable("matchId") String matchId, Principal yo) {
         try {
-            challenges.click(matchId, body.userId());
+            challenges.click(matchId, yo.getName());
             return ResponseEntity.noContent().build();
         } catch (ChallengeNotActiveException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));

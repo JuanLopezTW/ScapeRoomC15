@@ -45,7 +45,7 @@ class ChallengeWebTest {
 
     @Test
     void acceptedClickAnswers204() throws Exception {
-        mvc.perform(post("/api/partidas/m1/reto/clicks").contentType(MediaType.APPLICATION_JSON).content(click("ana")))
+        mvc.perform(post("/api/partidas/m1/reto/clicks").principal(() -> "ana"))
                 .andExpect(status().isNoContent());
         verify(service).click("m1", "ana");
     }
@@ -53,7 +53,7 @@ class ChallengeWebTest {
     @Test
     void clickWithoutChallengeAnswers409() throws Exception {
         doThrow(new ChallengeNotActiveException("m1")).when(service).click("m1", "ana");
-        mvc.perform(post("/api/partidas/m1/reto/clicks").contentType(MediaType.APPLICATION_JSON).content(click("ana")))
+        mvc.perform(post("/api/partidas/m1/reto/clicks").principal(() -> "ana"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").exists());
     }
@@ -61,15 +61,8 @@ class ChallengeWebTest {
     @Test
     void clickFromOutsiderAnswers403() throws Exception {
         doThrow(new NotInChallengeException("m1", "x")).when(service).click("m1", "x");
-        mvc.perform(post("/api/partidas/m1/reto/clicks").contentType(MediaType.APPLICATION_JSON).content(click("x")))
+        mvc.perform(post("/api/partidas/m1/reto/clicks").principal(() -> "x"))
                 .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void clickWithoutUserAnswers400() throws Exception {
-        mvc.perform(post("/api/partidas/m1/reto/clicks").contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isBadRequest());
-        verifyNoInteractions(service);
     }
 
     @Test

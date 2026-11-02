@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -67,18 +68,19 @@ public class SalaController {
     }
 
     @PostMapping
-    public ResponseEntity<?> crear(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> crear(@RequestBody Map<String, String> body, Principal yo) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(crear.ejecutar(body.get("nombre"), body.get("anfitrionId")));
+            return ResponseEntity.status(HttpStatus.CREATED).body(crear.ejecutar(body.get("nombre"), yo.getName()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     @PatchMapping("/{salaId}/configuracion")
-    public ResponseEntity<?> configurar(@PathVariable("salaId") String salaId, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> configurar(@PathVariable("salaId") String salaId, @RequestBody Map<String, Object> body,
+                                        Principal yo) {
         try {
-            return ResponseEntity.ok(configurar.ejecutar(salaId, (String) body.get("solicitanteId"),
+            return ResponseEntity.ok(configurar.ejecutar(salaId, yo.getName(),
                     entero(body, "numEquipos"), entero(body, "jugadoresPorEquipo")));
         } catch (NoEsAnfitrionException | PartidaYaIniciadaException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
@@ -88,9 +90,9 @@ public class SalaController {
     }
 
     @PostMapping("/{salaId}/jugadores")
-    public ResponseEntity<?> unirse(@PathVariable("salaId") String salaId, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> unirse(@PathVariable("salaId") String salaId, Principal yo) {
         try {
-            return ResponseEntity.ok(unirse.ejecutar(salaId, body.get("userId")));
+            return ResponseEntity.ok(unirse.ejecutar(salaId, yo.getName()));
         } catch (SalaLlenaException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
         } catch (PartidaYaIniciadaException e) {
@@ -110,14 +112,13 @@ public class SalaController {
     }
 
     @PostMapping("/{salaId}/listo")
-    public ResponseEntity<?> marcarListo(@PathVariable("salaId") String salaId, @RequestBody Map<String, String> body) {
-        return listo(() -> marcarListo.marcar(salaId, body.get("userId")));
+    public ResponseEntity<?> marcarListo(@PathVariable("salaId") String salaId, Principal yo) {
+        return listo(() -> marcarListo.marcar(salaId, yo.getName()));
     }
 
     @DeleteMapping("/{salaId}/listo")
-    public ResponseEntity<?> desmarcarListo(@PathVariable("salaId") String salaId,
-                                            @RequestParam(value = "userId", required = false) String userId) {
-        return listo(() -> marcarListo.desmarcar(salaId, userId));
+    public ResponseEntity<?> desmarcarListo(@PathVariable("salaId") String salaId, Principal yo) {
+        return listo(() -> marcarListo.desmarcar(salaId, yo.getName()));
     }
 
     /**
@@ -125,7 +126,9 @@ public class SalaController {
      * no existe, ya empezo la partida o el jugador no estaba, no hay nada que hacer.
      */
     @DeleteMapping("/{salaId}/jugadores/{userId}")
-    public ResponseEntity<Void> salir(@PathVariable("salaId") String salaId, @PathVariable("userId") String userId) {
+    public ResponseEntity<Void> salir(@PathVariable("salaId") String salaId, @PathVariable("userId") String userId,
+                                      Principal yo) {
+        if (!userId.equals(yo.getName())) return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         salir.ejecutar(salaId, userId);
         return ResponseEntity.noContent().build();
     }

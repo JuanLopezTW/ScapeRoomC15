@@ -44,7 +44,7 @@ class DesconexionStompTest {
 
     @Test
     void desconectarLaSesionSacaAlJugadorYAvisa() {
-        controller.registrarSesion("p1", "u1", "sesion-1");
+        controller.registrarSesion("p1", () -> "u1", "sesion-1");
 
         listener.onDisconnect(evento("sesion-1"));
 
@@ -62,7 +62,7 @@ class DesconexionStompTest {
 
     @Test
     void laSesionSoloSeProcesaUnaVez() {
-        controller.registrarSesion("p1", "u1", "sesion-1");
+        controller.registrarSesion("p1", () -> "u1", "sesion-1");
 
         listener.onDisconnect(evento("sesion-1"));
         listener.onDisconnect(evento("sesion-1"));

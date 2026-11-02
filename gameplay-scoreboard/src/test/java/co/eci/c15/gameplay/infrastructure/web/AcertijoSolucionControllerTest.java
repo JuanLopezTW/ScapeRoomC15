@@ -43,7 +43,7 @@ class AcertijoSolucionControllerTest {
         when(useCase.ejecutar("m1", "acertijo-1", "ana", List.of("16")))
                 .thenReturn(new ResultadoSolucionDto(true, true, "ok"));
 
-        mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(post(URL).principal(() -> "ana").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":\"ana\",\"respuesta\":[\"16\"]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.correcto").value(true))
@@ -55,18 +55,10 @@ class AcertijoSolucionControllerTest {
         when(useCase.ejecutar("m1", "acertijo-1", "ana", null))
                 .thenReturn(new ResultadoSolucionDto(false, false, "Incorrecto"));
 
-        mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content("{\"userId\":\"ana\"}"))
+        mvc.perform(post(URL).principal(() -> "ana").contentType(MediaType.APPLICATION_JSON).content("{\"userId\":\"ana\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.correcto").value(false))
                 .andExpect(jsonPath("$.resuelto").value(false));
-    }
-
-    @Test
-    void sinUserIdEsPeticionInvalida() throws Exception {
-        mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content("{\"respuesta\":[\"16\"]}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").exists());
-        verifyNoInteractions(useCase);
     }
 
     @Test
@@ -82,7 +74,7 @@ class AcertijoSolucionControllerTest {
 
         int[] esperados = {404, 404, 404, 409, 409, 409, 400};
         for (int esperado : esperados) {
-            mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content("{\"userId\":\"ana\"}"))
+            mvc.perform(post(URL).principal(() -> "ana").contentType(MediaType.APPLICATION_JSON).content("{\"userId\":\"ana\"}"))
                     .andExpect(status().is(esperado))
                     .andExpect(jsonPath("$.error").exists());
         }

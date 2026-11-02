@@ -47,8 +47,8 @@ class ChatControllerTest {
     }
 
     private ResultActions enviar(String ruta, String userId, String texto) throws Exception {
-        return mvc.perform(post(ruta).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"userId\":\"" + userId + "\",\"texto\":\"" + texto + "\"}"));
+        return mvc.perform(post(ruta).principal(() -> userId).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"texto\":\"" + texto + "\"}"));
     }
 
     @Test
@@ -67,7 +67,7 @@ class ChatControllerTest {
         enviar("/api/chat/salas/s1", "ana", "hola");
         enviar("/api/chat/salas/s1", "beto", "que mas");
 
-        mvc.perform(get("/api/chat/salas/s1").param("userId", "beto"))
+        mvc.perform(get("/api/chat/salas/s1").principal(() -> "beto"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].texto").value("hola"))
@@ -82,14 +82,9 @@ class ChatControllerTest {
     }
 
     @Test
-    void historialSinUserIdDevuelve400() throws Exception {
-        mvc.perform(get("/api/chat/salas/s1")).andExpect(status().isBadRequest());
-    }
-
-    @Test
     void jugadorAjenoALaSalaDevuelve403() throws Exception {
         enviar("/api/chat/salas/s1", "intruso", "hola").andExpect(status().isForbidden());
-        mvc.perform(get("/api/chat/salas/s1").param("userId", "intruso")).andExpect(status().isForbidden());
+        mvc.perform(get("/api/chat/salas/s1").principal(() -> "intruso")).andExpect(status().isForbidden());
     }
 
     @Test
@@ -99,7 +94,7 @@ class ChatControllerTest {
         enviar("/api/chat/salas/s1", "ana", "hola")
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error").isNotEmpty());
-        mvc.perform(get("/api/chat/salas/s1").param("userId", "ana")).andExpect(status().isConflict());
+        mvc.perform(get("/api/chat/salas/s1").principal(() -> "ana")).andExpect(status().isConflict());
     }
 
     @Test
@@ -122,9 +117,9 @@ class ChatControllerTest {
         enviar("/api/chat/partidas/m1/equipo", "ana", "secreto").andExpect(status().isCreated())
                 .andExpect(jsonPath("$.canal").value("partidas/m1/equipos/e1"));
 
-        mvc.perform(get("/api/chat/partidas/m1").param("userId", "caro"))
+        mvc.perform(get("/api/chat/partidas/m1").principal(() -> "caro"))
                 .andExpect(jsonPath("$", hasSize(1)));
-        mvc.perform(get("/api/chat/partidas/m1/equipo").param("userId", "caro"))
+        mvc.perform(get("/api/chat/partidas/m1/equipo").principal(() -> "caro"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
     }
