@@ -72,6 +72,13 @@ class SalirDeSalaUseCaseTest {
     }
 
     @Test
+    void sabeQuienEsElAnfitrion() {
+        assertTrue(useCase.esAnfitrion(sala.getId(), "host"));
+        assertFalse(useCase.esAnfitrion(sala.getId(), "ana"));
+        assertFalse(useCase.esAnfitrion("no-existe", "host"));
+    }
+
+    @Test
     void conLaPartidaIniciadaNoHaceNada() {
         sala.iniciarPartida();
 

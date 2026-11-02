@@ -13,8 +13,8 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import java.time.Duration;
 
 /**
- * Quien se desconecta en el lobby tiene un tiempo de gracia para volver: un corte de red o recargar
- * la pagina no lo saca. Si no vuelve, sale de la sala; si era el anfitrion, la sala se cierra.
+ * Un invitado que se desconecta en el lobby sale de una. El anfitrion tiene un tiempo de gracia para
+ * volver, porque si sale la sala se cierra para todos: un corte de red o recargar no debe causar eso.
  */
 @Component
 public class DesconexionSalaListener {
@@ -38,9 +38,14 @@ public class DesconexionSalaListener {
     @EventListener
     public void onDisconnect(SessionDisconnectEvent event) {
         sesiones.retirar(event.getSessionId()).ifPresent(s -> {
-            log.info("Jugador {} desconectado de la sala {} ({}); tiene {} para volver",
-                    s.userId(), s.salaId(), event.getCloseStatus(), gracia);
-            scheduler.schedule(() -> sacarSiNoVolvio(s), scheduler.getClock().instant().plus(gracia));
+            if (salir.esAnfitrion(s.salaId(), s.userId())) {
+                log.info("Anfitrion {} desconectado de la sala {} ({}); tiene {} para volver",
+                        s.userId(), s.salaId(), event.getCloseStatus(), gracia);
+                scheduler.schedule(() -> sacarSiNoVolvio(s), scheduler.getClock().instant().plus(gracia));
+            } else {
+                log.info("Jugador {} desconectado de la sala {} ({})", s.userId(), s.salaId(), event.getCloseStatus());
+                sacarSiNoVolvio(s);
+            }
         });
     }
 

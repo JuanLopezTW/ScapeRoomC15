@@ -34,6 +34,10 @@ public class SalirDeSalaUseCase {
         this.events = events;
     }
 
+    public boolean esAnfitrion(String salaId, String userId) {
+        return salas.findById(salaId).map(sala -> sala.esAnfitrion(userId)).orElse(false);
+    }
+
     @Transactional
     public Resultado ejecutar(String salaId, String userId) {
         Optional<Sala> encontrada = salas.findById(salaId);

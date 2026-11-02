@@ -23,7 +23,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** Desconectarse del lobby sin volver saca al jugador; si es el anfitrion, la sala se cierra. */
+/** Un invitado que se desconecta del lobby sale de una; el anfitrion tiene gracia y si no vuelve, la sala se cierra. */
 @SpringBootTest
 @AutoConfigureMockMvc
 class SalirDeSalaFlujoTest {
@@ -49,13 +49,10 @@ class SalirDeSalaFlujoTest {
 
         desconectar("sesion-beto");
 
-        // Durante la gracia sigue en la sala
-        mvc.perform(get("/api/salas/{id}", salaId)).andExpect(jsonPath("$.jugadores", hasItem("beto")));
-
-        cuandoPaseLaGracia(() -> mvc.perform(get("/api/salas/{id}", salaId))
+        mvc.perform(get("/api/salas/{id}", salaId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.jugadores", not(hasItem("beto"))))
-                .andExpect(jsonPath("$.jugadores", hasSize(1))));
+                .andExpect(jsonPath("$.jugadores", hasSize(1)));
         mvc.perform(get("/api/salas/{id}/equipos", salaId))
                 .andExpect(jsonPath("$[0].miembros", hasSize(0)));
     }
@@ -66,6 +63,9 @@ class SalirDeSalaFlujoTest {
         sesiones.registrarSesion(salaId, "ana", "sesion-ana");
 
         desconectar("sesion-ana");
+
+        // Durante la gracia la sala sigue
+        mvc.perform(get("/api/salas/{id}", salaId)).andExpect(status().isOk());
 
         cuandoPaseLaGracia(() -> mvc.perform(get("/api/salas/{id}", salaId)).andExpect(status().isNotFound()));
         mvc.perform(get("/api/salas"))

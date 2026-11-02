@@ -36,6 +36,7 @@ class DesconexionSalaTest {
         salir = mock(SalirDeSalaUseCase.class);
         scheduler = mock(TaskScheduler.class);
         when(scheduler.getClock()).thenReturn(Clock.fixed(AHORA, ZoneOffset.UTC));
+        when(salir.esAnfitrion("s1", "host")).thenReturn(true);
         controller = new SesionSalaStompController(sesiones);
         listener = new DesconexionSalaListener(sesiones, salir, scheduler, GRACIA);
     }
@@ -53,25 +54,35 @@ class DesconexionSalaTest {
     }
 
     @Test
-    void alDesconectarseNoSaleDeUnaSinoCuandoPasaLaGracia() {
+    void elInvitadoSaleDeUnaSinTiempoDeGracia() {
         controller.registrarSesion("s1", "ana", "sesion-1");
 
         listener.onDisconnect(evento("sesion-1"));
-        verifyNoInteractions(salir);
 
-        pasaLaGracia(1);
         verify(salir).ejecutar("s1", "ana");
+        verify(scheduler, never()).schedule(any(Runnable.class), any(Instant.class));
     }
 
     @Test
-    void siVuelveDentroDeLaGraciaNoSale() {
-        controller.registrarSesion("s1", "ana", "sesion-1");
+    void elAnfitrionNoSaleDeUnaSinoCuandoPasaLaGracia() {
+        controller.registrarSesion("s1", "host", "sesion-1");
+
+        listener.onDisconnect(evento("sesion-1"));
+        verify(salir, never()).ejecutar(anyString(), anyString());
+
+        pasaLaGracia(1);
+        verify(salir).ejecutar("s1", "host");
+    }
+
+    @Test
+    void siElAnfitrionVuelveDentroDeLaGraciaNoSale() {
+        controller.registrarSesion("s1", "host", "sesion-1");
         listener.onDisconnect(evento("sesion-1"));
 
-        controller.registrarSesion("s1", "ana", "sesion-nueva");
+        controller.registrarSesion("s1", "host", "sesion-nueva");
         pasaLaGracia(1);
 
-        verifyNoInteractions(salir);
+        verify(salir, never()).ejecutar(anyString(), anyString());
     }
 
     @Test
@@ -89,7 +100,6 @@ class DesconexionSalaTest {
         listener.onDisconnect(evento("sesion-1"));
         listener.onDisconnect(evento("sesion-1"));
 
-        pasaLaGracia(1);
         verify(salir, times(1)).ejecutar(anyString(), anyString());
     }
 
@@ -99,11 +109,9 @@ class DesconexionSalaTest {
         controller.registrarSesion("s1", "ana", "sesion-2");
 
         listener.onDisconnect(evento("sesion-1"));
-        pasaLaGracia(1);
-        verifyNoInteractions(salir);
+        verify(salir, never()).ejecutar(anyString(), anyString());
 
         listener.onDisconnect(evento("sesion-2"));
-        pasaLaGracia(2);
         verify(salir).ejecutar("s1", "ana");
     }
 }

@@ -15,7 +15,7 @@ server:
 
 c15:
   salas:
-    # Lo que espera el back antes de sacar del lobby a quien se desconecto
+    # Lo que espera el back antes de cerrar la sala si se desconecto el anfitrion (los invitados salen de una)
     gracia-desconexion: 20s
   partida:
     duracion: ${PARTIDA_DURACION:30m}
