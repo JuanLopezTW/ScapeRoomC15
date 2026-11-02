@@ -30,8 +30,19 @@ services:
       RETO_DURACION: ${RETO_DURACION}
       AUTH0_ISSUER: ${AUTH0_ISSUER:-https://escaperoomc15.us.auth0.com/}
       AUTH0_AUDIENCE: ${AUTH0_AUDIENCE:-https://api.escaperoomc15}
+      # Logs legibles en la consola y copia a Grafana (http://localhost:3000)
+      SPRING_PROFILES_ACTIVE: local
+      OTEL_ACTIVO: "true"
+      OTEL_TRACES_URL: http://observabilidad:4318/v1/traces
+      OTEL_LOGS_URL: http://observabilidad:4318/v1/logs
     ports:
       - "${BACK_PORT}:8080"
+
+  # Grafana con Tempo (trazas) y Loki (logs), solo para desarrollo
+  observabilidad:
+    image: grafana/otel-lgtm:0.39.0
+    ports:
+      - "127.0.0.1:3000:3000"
 
 volumes:
   db-data:

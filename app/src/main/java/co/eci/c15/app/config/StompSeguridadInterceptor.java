@@ -47,7 +47,10 @@ public class StompSeguridadInterceptor implements ChannelInterceptor {
 
         StompCommand comando = stomp.getCommand();
         if (comando == StompCommand.CONNECT) {
-            stomp.setUser(new JwtAuthenticationToken(validarToken(stomp)));
+            JwtAuthenticationToken usuario = new JwtAuthenticationToken(validarToken(stomp));
+            stomp.setUser(usuario);
+            log.atInfo().addKeyValue("evento", "stomp.conectado").addKeyValue("userId", usuario.getName())
+                    .log("STOMP conectado: {}", usuario.getName());
             return message;
         }
         if (comando == StompCommand.SEND && !permitidoEnviar(stomp)) return denegar(stomp);

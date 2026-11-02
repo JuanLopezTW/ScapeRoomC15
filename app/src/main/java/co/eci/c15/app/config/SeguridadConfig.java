@@ -1,11 +1,13 @@
 package co.eci.c15.app.config;
 
+import co.eci.c15.app.observabilidad.ContextoUsuarioFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -27,6 +29,7 @@ public class SeguridadConfig {
                         .requestMatchers("/api/version", "/ws/**", "/error").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()))
+                .addFilterAfter(new ContextoUsuarioFilter(), BearerTokenAuthenticationFilter.class)
                 .build();
     }
 }

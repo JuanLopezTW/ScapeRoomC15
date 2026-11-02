@@ -30,3 +30,23 @@ c15:
   reto:
     # 5 s del aviso del front (ModalDesafio) + 20 s de juego: el reto corre desde que sale el aviso
     duracion: ${RETO_DURACION:25s}
+
+# Logs en JSON salvo con el perfil "local"; el traceId lo agrega Micrometer Tracing
+logging:
+  structured:
+    format:
+      console: ecs
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_TRACES_URL:http://localhost:4318/v1/traces}
+      export:
+        enabled: ${OTEL_ACTIVO:false}
+    logging:
+      endpoint: ${OTEL_LOGS_URL:http://localhost:4318/v1/logs}
+      export:
+        enabled: ${OTEL_ACTIVO:false}

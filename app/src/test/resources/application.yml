@@ -21,3 +21,12 @@ c15:
     gracia-desconexion: 200ms
   partida:
     cuenta-regresiva: 1s
+
+management:
+  otlp:
+    tracing:
+      export:
+        enabled: false
+    logging:
+      export:
+        enabled: false

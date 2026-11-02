@@ -17,7 +17,6 @@ public class SalasConfig {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(1);
         scheduler.setThreadNamePrefix("salas-");
-        scheduler.initialize();
         return scheduler;
     }
 }

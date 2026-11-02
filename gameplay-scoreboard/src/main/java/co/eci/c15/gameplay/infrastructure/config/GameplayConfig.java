@@ -18,7 +18,6 @@ public class GameplayConfig {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(4);
         scheduler.setThreadNamePrefix("gameplay-");
-        scheduler.initialize();
         return scheduler;
     }
 
