@@ -8,11 +8,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.BadJwtException;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import java.time.Instant;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,10 +63,26 @@ class SeguridadFlujoTest {
     @Test
     void sinTokenLaApiResponde401() throws Exception {
         mvc.perform(get("/api/salas")).andExpect(status().isUnauthorized());
+        // Escribir sin token ni siquiera pasa CSRF
         mvc.perform(post("/api/salas").contentType(MediaType.APPLICATION_JSON).content("{\"nombre\":\"x\"}"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
         mvc.perform(get("/dev/partidas/m1/inicio")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/perfil").header("Authorization", "Bearer token-falso"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void conTokenBearerNoSePideTokenCsrfYElInvalidoDa401() throws Exception {
+        // Sin .with(csrf()): lo que vale es el header, como lo manda el front
+        when(tokens.decode("token-bueno")).thenReturn(Jwt.withTokenValue("token-bueno").header("alg", "RS256")
+                .subject("auth0|csrf").issuedAt(Instant.EPOCH).expiresAt(Instant.parse("2999-01-01T00:00:00Z")).build());
+
+        mvc.perform(post("/api/salas").header("Authorization", "Bearer token-bueno")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nombre\":\"Con bearer\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.anfitrionId").value("auth0|csrf"));
+        mvc.perform(post("/api/salas").header("Authorization", "Bearer token-falso")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"nombre\":\"Falso\"}"))
                 .andExpect(status().isUnauthorized());
     }
 
