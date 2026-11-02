@@ -167,7 +167,7 @@ jobs:
     needs: [analysis, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -198,6 +198,7 @@ jobs:
         with:
           context: .
           push: true
+          build-args: GIT_SHA=${{ github.sha }}
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
@@ -215,18 +216,20 @@ jobs:
             --name "$AZURE_WEBAPP_NAME" \
             --resource-group "$AZURE_RESOURCE_GROUP"
 
-      - name: Verificar que la app responde
+      # Que responda no basta: el contenedor viejo tambien responde mientras Azure cambia al nuevo.
+      # Este paso solo pasa cuando GET /api/version devuelve el commit de este push.
+      - name: Esperar a que Azure corra este commit
         run: |
-          for i in $(seq 1 10); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$AZURE_WEBAPP_URL" || echo 000)
-            echo "Intento $i: HTTP $code"
-            if [ "$code" != "000" ] && [ "$code" -lt 500 ]; then
-              echo "### Deploy OK: $AZURE_WEBAPP_URL (HTTP $code)" >> "$GITHUB_STEP_SUMMARY"
+          for i in $(seq 1 40); do
+            actual=$(curl -s --max-time 20 "$AZURE_WEBAPP_URL/api/version" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p')
+            echo "Intento $i: esperado $GITHUB_SHA, corre '${actual:-sin version}'"
+            if [ "$actual" = "$GITHUB_SHA" ]; then
+              echo "### Azure ya corre el commit \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
             sleep 30
           done
-          echo "::error::La app no respondió tras el deploy. Revisa el Log stream del Web App."
+          echo "::error::Tras 20 minutos Azure no corre $GITHUB_SHA. Revisa el Log stream del Web App."
           exit 1
 
       - name: Logout de Azure

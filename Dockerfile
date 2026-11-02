@@ -9,5 +9,8 @@ RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp -DskipTests package
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /src/app/target/app-*.jar app.jar
+# Commit de esta imagen: lo expone GET /api/version y la pipeline espera a verlo en Azure
+ARG GIT_SHA=dev
+ENV APP_VERSION=$GIT_SHA
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
