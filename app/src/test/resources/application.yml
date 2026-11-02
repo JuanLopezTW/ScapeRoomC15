@@ -10,5 +10,7 @@ spring:
     show-sql: false
 
 c15:
+  salas:
+    gracia-desconexion: 200ms
   partida:
     cuenta-regresiva: 1s

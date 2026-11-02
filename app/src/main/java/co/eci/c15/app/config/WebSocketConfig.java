@@ -27,8 +27,12 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    /** Sin latidos una conexion quieta (ej. esperando en el lobby) se ve muerta y la nube la puede cortar. */
-    private static final long[] LATIDO_MS = {10_000, 10_000};
+    /**
+     * El servidor manda latidos para que la conexion no quede quieta, pero no se los exige al cliente
+     * (0): el navegador frena los timers de las pestañas en segundo plano y, si se exigieran, el
+     * servidor cortaria a quien solo tiene la pestaña oculta.
+     */
+    private static final long[] LATIDO_MS = {10_000, 0};
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {

@@ -14,6 +14,9 @@ server:
   port: 8080
 
 c15:
+  salas:
+    # Lo que espera el back antes de sacar del lobby a quien se desconecto
+    gracia-desconexion: 20s
   partida:
     duracion: ${PARTIDA_DURACION:30m}
     cuenta-regresiva: 5s

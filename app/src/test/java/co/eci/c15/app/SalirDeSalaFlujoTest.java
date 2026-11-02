@@ -4,6 +4,7 @@ import co.eci.c15.salas.infrastructure.events.DesconexionSalaListener;
 import co.eci.c15.salas.infrastructure.web.SesionSalaStompController;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,13 +15,15 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+import java.time.Duration;
+
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** Cerrar la pagina en el lobby saca al jugador; si es el anfitrion, la sala se cierra. */
+/** Desconectarse del lobby sin volver saca al jugador; si es el anfitrion, la sala se cierra. */
 @SpringBootTest
 @AutoConfigureMockMvc
 class SalirDeSalaFlujoTest {
@@ -46,10 +49,13 @@ class SalirDeSalaFlujoTest {
 
         desconectar("sesion-beto");
 
-        mvc.perform(get("/api/salas/{id}", salaId))
+        // Durante la gracia sigue en la sala
+        mvc.perform(get("/api/salas/{id}", salaId)).andExpect(jsonPath("$.jugadores", hasItem("beto")));
+
+        cuandoPaseLaGracia(() -> mvc.perform(get("/api/salas/{id}", salaId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.jugadores", not(hasItem("beto"))))
-                .andExpect(jsonPath("$.jugadores", hasSize(1)));
+                .andExpect(jsonPath("$.jugadores", hasSize(1))));
         mvc.perform(get("/api/salas/{id}/equipos", salaId))
                 .andExpect(jsonPath("$[0].miembros", hasSize(0)));
     }
@@ -61,9 +67,24 @@ class SalirDeSalaFlujoTest {
 
         desconectar("sesion-ana");
 
-        mvc.perform(get("/api/salas/{id}", salaId)).andExpect(status().isNotFound());
+        cuandoPaseLaGracia(() -> mvc.perform(get("/api/salas/{id}", salaId)).andExpect(status().isNotFound()));
         mvc.perform(get("/api/salas"))
                 .andExpect(jsonPath("$[?(@.id == '" + salaId + "')]", hasSize(0)));
+    }
+
+    @Test
+    void siElAnfitrionVuelveDentroDeLaGraciaLaSalaSigueYSusJugadoresTambien() throws Exception {
+        String salaId = salaConJugadores("Lobby corte", "ana", "beto");
+        sesiones.registrarSesion(salaId, "ana", "sesion-ana-1");
+
+        desconectar("sesion-ana-1");
+        sesiones.registrarSesion(salaId, "ana", "sesion-ana-2");
+        Thread.sleep(600); // mas que la gracia de los tests
+
+        mvc.perform(get("/api/salas/{id}", salaId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.jugadores", hasItem("ana")))
+                .andExpect(jsonPath("$.jugadores", hasItem("beto")));
     }
 
     @Test
@@ -80,6 +101,10 @@ class SalirDeSalaFlujoTest {
 
         // Repetirlo no falla: no hay nada que hacer
         mvc.perform(delete("/api/salas/{id}/jugadores/{u}", salaId, "ana")).andExpect(status().isNoContent());
+    }
+
+    private static void cuandoPaseLaGracia(org.awaitility.core.ThrowingRunnable comprobacion) {
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(comprobacion);
     }
 
     private void desconectar(String sessionId) {

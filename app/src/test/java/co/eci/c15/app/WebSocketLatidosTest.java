@@ -8,7 +8,7 @@ import org.springframework.messaging.simp.broker.SimpleBrokerMessageHandler;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-/** Sin latidos, una conexion quieta (esperando en el lobby) se cae y el back saca al jugador. */
+/** El servidor manda latidos pero no los exige: una pestaña en segundo plano no debe perder la conexion. */
 @SpringBootTest
 class WebSocketLatidosTest {
 
@@ -16,8 +16,8 @@ class WebSocketLatidosTest {
     private SimpleBrokerMessageHandler broker;
 
     @Test
-    void elBrokerNegociaLatidosParaQueLaConexionNoQuedeQuieta() {
-        assertArrayEquals(new long[]{10_000, 10_000}, broker.getHeartbeatValue());
+    void elServidorMandaLatidosSinExigirselosAlCliente() {
+        assertArrayEquals(new long[]{10_000, 0}, broker.getHeartbeatValue());
         assertNotNull(broker.getTaskScheduler());
     }
 }

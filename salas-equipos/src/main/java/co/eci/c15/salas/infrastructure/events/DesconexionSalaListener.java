@@ -1,26 +1,50 @@
 package co.eci.c15.salas.infrastructure.events;
 
 import co.eci.c15.salas.application.SalirDeSalaUseCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
-/** Quien cierra la pagina en el lobby sale de la sala; si era el anfitrion, la sala se cierra. */
+import java.time.Duration;
+
+/**
+ * Quien se desconecta en el lobby tiene un tiempo de gracia para volver: un corte de red o recargar
+ * la pagina no lo saca. Si no vuelve, sale de la sala; si era el anfitrion, la sala se cierra.
+ */
 @Component
 public class DesconexionSalaListener {
 
+    private static final Logger log = LoggerFactory.getLogger(DesconexionSalaListener.class);
+
     private final SesionSalaRegistry sesiones;
     private final SalirDeSalaUseCase salir;
+    private final TaskScheduler scheduler;
+    private final Duration gracia;
 
-    public DesconexionSalaListener(SesionSalaRegistry sesiones, SalirDeSalaUseCase salir) {
+    public DesconexionSalaListener(SesionSalaRegistry sesiones, SalirDeSalaUseCase salir,
+                                   @Qualifier("salasScheduler") TaskScheduler scheduler,
+                                   @Value("${c15.salas.gracia-desconexion:20s}") Duration gracia) {
         this.sesiones = sesiones;
         this.salir = salir;
+        this.scheduler = scheduler;
+        this.gracia = gracia;
     }
 
     @EventListener
     public void onDisconnect(SessionDisconnectEvent event) {
-        sesiones.retirar(event.getSessionId())
-                .filter(s -> !sesiones.tieneOtraSesion(s.salaId(), s.userId()))
-                .ifPresent(s -> salir.ejecutar(s.salaId(), s.userId()));
+        sesiones.retirar(event.getSessionId()).ifPresent(s -> {
+            log.info("Jugador {} desconectado de la sala {} ({}); tiene {} para volver",
+                    s.userId(), s.salaId(), event.getCloseStatus(), gracia);
+            scheduler.schedule(() -> sacarSiNoVolvio(s), scheduler.getClock().instant().plus(gracia));
+        });
+    }
+
+    private void sacarSiNoVolvio(SesionSalaRegistry.Sesion s) {
+        if (!sesiones.tieneOtraSesion(s.salaId(), s.userId())) salir.ejecutar(s.salaId(), s.userId());
     }
 }
