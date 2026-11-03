@@ -74,7 +74,7 @@ class EstadisticasServiceTest {
 
     @Test
     void unaPartidaQueNoVioIniciarSeIgnora() {
-        estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1)));
+        assertFalse(estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1))));
 
         verify(repositorio, never()).guardarTodas(any());
     }
@@ -84,8 +84,8 @@ class EstadisticasServiceTest {
         estadisticas.partidaIniciada("m1", EQUIPOS);
         MatchFinishedEvent fin = new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1, "e2", 0));
 
-        estadisticas.partidaTerminada(fin);
-        estadisticas.partidaTerminada(fin);
+        assertTrue(estadisticas.partidaTerminada(fin));
+        assertFalse(estadisticas.partidaTerminada(fin));
 
         verify(repositorio, times(1)).guardarTodas(any());
     }
@@ -95,7 +95,7 @@ class EstadisticasServiceTest {
         when(repositorio.existePartida("m1")).thenReturn(true);
         estadisticas.partidaIniciada("m1", EQUIPOS);
 
-        estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1)));
+        assertFalse(estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1))));
 
         verify(repositorio, never()).guardarTodas(any());
     }

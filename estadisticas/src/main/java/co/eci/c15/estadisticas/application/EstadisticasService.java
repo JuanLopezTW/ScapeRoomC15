@@ -50,10 +50,11 @@ public class EstadisticasService {
         equiposPorPartida.put(matchId, equipos);
     }
 
+    /** Devuelve si la partida quedo registrada (false si no se conocian sus equipos o ya estaba). */
     @Transactional
-    public void partidaTerminada(MatchFinishedEvent evento) {
+    public boolean partidaTerminada(MatchFinishedEvent evento) {
         Map<String, List<String>> equipos = equiposPorPartida.remove(evento.matchId());
-        if (equipos == null || repositorio.existePartida(evento.matchId())) return;
+        if (equipos == null || repositorio.existePartida(evento.matchId())) return false;
 
         Instant ahora = clock.instant();
         int mejorPuntaje = evento.scores().values().stream().mapToInt(Integer::intValue).max().orElse(0);
@@ -67,6 +68,7 @@ public class EstadisticasService {
         repositorio.guardarTodas(partidas);
         EventoNegocio.de(log, "estadisticas.partida_registrada").con("matchId", evento.matchId())
                 .con("jugadores", partidas.size()).info();
+        return true;
     }
 
     public List<JugadorRankingDto> ranking(int limite) {
