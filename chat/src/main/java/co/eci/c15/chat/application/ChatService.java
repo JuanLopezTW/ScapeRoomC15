@@ -17,7 +17,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Los cuatro chats del juego, todos efimeros:
@@ -39,21 +38,25 @@ public class ChatService {
     private final SalaEsperaConsulta salas;
     private final UsuarioConsulta usuarios;
     private final ChatNotifier notifier;
-    private final Clock clock;
-    private final LimiteMensajes limite = new LimiteMensajes();
+    private final LimiteEnvios limite;
     /** matchId -> equipoId -> jugadores, tal como llegan en PartidaIniciadaEvent. */
-    private final Map<String, Map<String, List<String>>> partidas = new ConcurrentHashMap<>();
+    private final EquiposDePartida partidas;
+    private final Clock clock;
 
     @Autowired
-    public ChatService(ChatRepository mensajes, SalaEsperaConsulta salas, UsuarioConsulta usuarios, ChatNotifier notifier) {
-        this(mensajes, salas, usuarios, notifier, Clock.systemUTC());
+    public ChatService(ChatRepository mensajes, SalaEsperaConsulta salas, UsuarioConsulta usuarios, ChatNotifier notifier,
+                       LimiteEnvios limite, EquiposDePartida partidas) {
+        this(mensajes, salas, usuarios, notifier, limite, partidas, Clock.systemUTC());
     }
 
-    ChatService(ChatRepository mensajes, SalaEsperaConsulta salas, UsuarioConsulta usuarios, ChatNotifier notifier, Clock clock) {
+    ChatService(ChatRepository mensajes, SalaEsperaConsulta salas, UsuarioConsulta usuarios, ChatNotifier notifier,
+                LimiteEnvios limite, EquiposDePartida partidas, Clock clock) {
         this.mensajes = mensajes;
         this.salas = salas;
         this.usuarios = usuarios;
         this.notifier = notifier;
+        this.limite = limite;
+        this.partidas = partidas;
         this.clock = clock;
     }
 
@@ -113,15 +116,14 @@ public class ChatService {
 
     public void partidaIniciada(String matchId, Map<String, List<String>> equipos) {
         cerrarSala(matchId);
-        partidas.put(matchId, equipos);
+        partidas.guardar(matchId, equipos);
     }
 
     public void partidaTerminada(String matchId) {
-        Map<String, List<String>> equipos = partidas.remove(matchId);
+        partidas.de(matchId).ifPresent(equipos ->
+                equipos.keySet().forEach(equipoId -> mensajes.borrar(CanalChat.equipo(matchId, equipoId).clave())));
+        partidas.borrar(matchId);
         mensajes.borrar(CanalChat.partida(matchId).clave());
-        if (equipos != null) {
-            equipos.keySet().forEach(equipoId -> mensajes.borrar(CanalChat.equipo(matchId, equipoId).clave()));
-        }
     }
 
     private MensajeChatDto publicar(MensajeChat mensaje) {
@@ -151,8 +153,7 @@ public class ChatService {
     }
 
     private String equipoDe(String matchId, String userId) {
-        Map<String, List<String>> equipos = partidas.get(matchId);
-        if (equipos == null) throw new ChatNoDisponibleException(matchId);
+        Map<String, List<String>> equipos = partidas.de(matchId).orElseThrow(() -> new ChatNoDisponibleException(matchId));
         return equipos.entrySet().stream()
                 .filter(e -> e.getValue().contains(userId))
                 .map(Map.Entry::getKey)

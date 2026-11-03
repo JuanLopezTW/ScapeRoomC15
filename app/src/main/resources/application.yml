@@ -16,11 +16,24 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PUERTO:6379}
+      password: ${REDIS_CLAVE:}
+      # Solo se usa como almacen de estado, no como repositorio de Spring Data
+      repositories:
+        enabled: false
 
 server:
   port: 8080
 
 c15:
+  estado:
+    # false: estado vivo en memoria (una sola instancia). true: en Redis, compartido entre instancias.
+    redis: ${ESTADO_REDIS:false}
+    # Todo en Redis caduca: lo de una partida dura lo que la partida mas este margen (regla del profe: minutos, nunca mas de 1 h)
+    margen: 10m
   salas:
     # Lo que espera el back antes de cerrar la sala si se desconecto el anfitrion (los invitados salen de una)
     gracia-desconexion: 20s
@@ -46,6 +59,10 @@ logging:
       console: ecs
 
 management:
+  health:
+    redis:
+      # Sin Redis encendido no se revisa (si no, el health daria DOWN en Azure)
+      enabled: ${ESTADO_REDIS:false}
   tracing:
     sampling:
       probability: 1.0

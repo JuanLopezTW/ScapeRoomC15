@@ -1,6 +1,7 @@
 package co.eci.c15.salas.infrastructure.events;
 
 import co.eci.c15.salas.application.SalirDeSalaUseCase;
+import co.eci.c15.salas.infrastructure.estado.PresenciaSalaEnMemoria;
 import co.eci.c15.salas.infrastructure.web.SesionSalaStompController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ class DesconexionSalaTest {
 
     @BeforeEach
     void setUp() {
-        SesionSalaRegistry sesiones = new SesionSalaRegistry();
+        SesionSalaRegistry sesiones = new SesionSalaRegistry(new PresenciaSalaEnMemoria());
         salir = mock(SalirDeSalaUseCase.class);
         scheduler = mock(TaskScheduler.class);
         when(scheduler.getClock()).thenReturn(Clock.fixed(AHORA, ZoneOffset.UTC));

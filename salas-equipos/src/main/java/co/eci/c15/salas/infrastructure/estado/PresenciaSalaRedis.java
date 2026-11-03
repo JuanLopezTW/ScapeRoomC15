@@ -1,0 +1,82 @@
+package co.eci.c15.salas.infrastructure.estado;
+
+import co.eci.c15.salas.infrastructure.events.PresenciaSala;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Por cada jugador en el lobby de una sala, un set ordenado de Redis con sus conexiones y la hora hasta la
+ * que cada una vale. Cada instancia renueva las suyas cada {@link #RENOVACION}: si una instancia muere, sus
+ * conexiones dejan de contar solas en {@link #VIDA} (nadie tiene que limpiar), y la clave entera caduca.
+ */
+@Component
+@ConditionalOnProperty(name = "c15.estado.redis", havingValue = "true")
+public class PresenciaSalaRedis implements PresenciaSala {
+
+    static final String PREFIJO = "c15:salas:presencia:";
+    static final Duration VIDA = Duration.ofSeconds(90);
+    static final Duration RENOVACION = Duration.ofSeconds(30);
+
+    private record Quien(String salaId, String userId) {}
+
+    private final StringRedisTemplate redis;
+    private final TaskScheduler scheduler;
+    /** Las conexiones de esta instancia, para renovarlas. */
+    private final Map<String, Quien> propias = new ConcurrentHashMap<>();
+
+    public PresenciaSalaRedis(StringRedisTemplate redis, @Qualifier("salasScheduler") TaskScheduler scheduler) {
+        this.redis = redis;
+        this.scheduler = scheduler;
+    }
+
+    static String clave(String salaId, String userId) {
+        return PREFIJO + salaId + ":" + userId;
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void programarRenovacion() {
+        scheduler.scheduleAtFixedRate(this::renovar, RENOVACION);
+    }
+
+    @Override
+    public void entrar(String sessionId, String salaId, String userId) {
+        propias.put(sessionId, new Quien(salaId, userId));
+        marcar(sessionId, salaId, userId);
+    }
+
+    @Override
+    public void salir(String sessionId, String salaId, String userId) {
+        propias.remove(sessionId);
+        redis.opsForZSet().remove(clave(salaId, userId), sessionId);
+    }
+
+    @Override
+    public boolean conectado(String salaId, String userId) {
+        Long vigentes = redis.opsForZSet().count(clave(salaId, userId), ahora(), Double.POSITIVE_INFINITY);
+        return vigentes != null && vigentes > 0;
+    }
+
+    /** Vuelve a marcar las conexiones de esta instancia (tambien las repone si Redis se reinicio). */
+    void renovar() {
+        propias.forEach((sessionId, q) -> marcar(sessionId, q.salaId(), q.userId()));
+    }
+
+    private void marcar(String sessionId, String salaId, String userId) {
+        String clave = clave(salaId, userId);
+        redis.opsForZSet().add(clave, sessionId, ahora() + VIDA.toMillis());
+        redis.expire(clave, VIDA);
+    }
+
+    private double ahora() {
+        return scheduler.getClock().millis();
+    }
+}

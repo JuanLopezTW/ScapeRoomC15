@@ -2,6 +2,7 @@ package co.eci.c15.chat.infrastructure.persistence;
 
 import co.eci.c15.chat.domain.ChatRepository;
 import co.eci.c15.chat.domain.MensajeChat;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayDeque;
@@ -12,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** El chat es efimero: vive en memoria y solo guarda los ultimos mensajes de cada canal. */
 @Repository
+@ConditionalOnProperty(name = "c15.estado.redis", havingValue = "false", matchIfMissing = true)
 public class ChatEnMemoria implements ChatRepository {
 
     public static final int MAX_MENSAJES = 50;

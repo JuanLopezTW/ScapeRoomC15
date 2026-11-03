@@ -4,6 +4,8 @@ import co.eci.c15.chat.domain.ChatNoDisponibleException;
 import co.eci.c15.chat.domain.DemasiadosMensajesException;
 import co.eci.c15.chat.domain.JugadorFueraDeSalaException;
 import co.eci.c15.chat.domain.MensajeChat;
+import co.eci.c15.chat.infrastructure.estado.EquiposDePartidaEnMemoria;
+import co.eci.c15.chat.infrastructure.estado.LimiteEnviosEnMemoria;
 import co.eci.c15.chat.infrastructure.persistence.ChatEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +42,8 @@ class ChatServiceTest {
         mensajes = new ChatEnMemoria();
         notifier = mock(ChatNotifier.class);
         reloj = new RelojMovible(AHORA);
-        chat = new ChatService(mensajes, salas, Set.of("ana", "beto", "caro")::contains, notifier, reloj);
+        chat = new ChatService(mensajes, salas, Set.of("ana", "beto", "caro")::contains, notifier,
+                new LimiteEnviosEnMemoria(), new EquiposDePartidaEnMemoria(), reloj);
     }
 
     private List<String> textos(List<MensajeChatDto> lista) {
@@ -233,22 +236,22 @@ class ChatServiceTest {
 
     @Test
     void quienEnviaDemasiadoRapidoEsFrenadoSumandoTodosLosCanalesYLuegoPuedeSeguir() {
-        for (int i = 0; i < LimiteMensajes.MAX_MENSAJES - 1; i++) chat.enviarGlobal("ana", "m" + i);
+        for (int i = 0; i < LimiteEnvios.MAX_MENSAJES - 1; i++) chat.enviarGlobal("ana", "m" + i);
         chat.enviarSala("s1", "ana", "ultimo permitido");
 
         assertThrows(DemasiadosMensajesException.class, () -> chat.enviarGlobal("ana", "de mas"));
-        assertEquals(LimiteMensajes.MAX_MENSAJES - 1, chat.historialGlobal().size());
+        assertEquals(LimiteEnvios.MAX_MENSAJES - 1, chat.historialGlobal().size());
 
         // Otro usuario no se ve afectado
         assertDoesNotThrow(() -> chat.enviarGlobal("beto", "hola"));
 
-        reloj.avanzar(LimiteMensajes.VENTANA);
+        reloj.avanzar(LimiteEnvios.VENTANA);
         assertDoesNotThrow(() -> chat.enviarGlobal("ana", "ya puedo"));
     }
 
     @Test
     void unMensajeRechazadoNoGastaElLimite() {
-        for (int i = 0; i < LimiteMensajes.MAX_MENSAJES * 2; i++) {
+        for (int i = 0; i < LimiteEnvios.MAX_MENSAJES * 2; i++) {
             assertThrows(IllegalArgumentException.class, () -> chat.enviarGlobal("ana", "  "));
         }
 

@@ -3,6 +3,8 @@ package co.eci.c15.chat.infrastructure.web;
 import co.eci.c15.chat.application.ChatNotifier;
 import co.eci.c15.chat.application.ChatService;
 import co.eci.c15.chat.application.SalaEsperaConsulta;
+import co.eci.c15.chat.infrastructure.estado.EquiposDePartidaEnMemoria;
+import co.eci.c15.chat.infrastructure.estado.LimiteEnviosEnMemoria;
 import co.eci.c15.chat.infrastructure.persistence.ChatEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +44,8 @@ class ChatControllerTest {
             }
         };
         ChatNotifier notifier = m -> { };
-        chat = new ChatService(new ChatEnMemoria(), salas, Set.of("ana", "beto", "caro")::contains, notifier);
+        chat = new ChatService(new ChatEnMemoria(), salas, Set.of("ana", "beto", "caro")::contains, notifier,
+                new LimiteEnviosEnMemoria(), new EquiposDePartidaEnMemoria());
         mvc = MockMvcBuilders.standaloneSetup(new ChatController(chat)).build();
     }
 

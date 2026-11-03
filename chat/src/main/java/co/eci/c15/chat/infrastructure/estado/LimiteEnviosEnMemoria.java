@@ -1,23 +1,25 @@
-package co.eci.c15.chat.application;
+package co.eci.c15.chat.infrastructure.estado;
 
+import co.eci.c15.chat.application.LimiteEnvios;
 import co.eci.c15.chat.domain.DemasiadosMensajesException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Anti-spam: cada usuario puede enviar pocos mensajes por ventana de tiempo, sumando todos los canales. */
-class LimiteMensajes {
-
-    static final int MAX_MENSAJES = 5;
-    static final Duration VENTANA = Duration.ofSeconds(5);
+/** Ventana deslizante por usuario en memoria (una sola instancia). */
+@Component
+@ConditionalOnProperty(name = "c15.estado.redis", havingValue = "false", matchIfMissing = true)
+public class LimiteEnviosEnMemoria implements LimiteEnvios {
 
     private final Map<String, Deque<Instant>> porUsuario = new ConcurrentHashMap<>();
 
-    void registrar(String userId, Instant ahora) {
+    @Override
+    public void registrar(String userId, Instant ahora) {
         porUsuario.compute(userId, (id, envios) -> {
             Deque<Instant> recientes = envios != null ? envios : new ArrayDeque<>();
             while (!recientes.isEmpty() && !recientes.peekFirst().isAfter(ahora.minus(VENTANA))) {
