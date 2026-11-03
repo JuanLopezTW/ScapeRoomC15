@@ -14,22 +14,33 @@ public class MoverPersonajeUseCase {
     private final JugadorEnMapaRepository jugadores;
     private final ObtenerMapaUseCase obtenerMapa;
     private final ApplicationEventPublisher events;
+    private final CandadoEquipo candado;
 
     public MoverPersonajeUseCase(JugadorEnMapaRepository jugadores,
                                  ObtenerMapaUseCase obtenerMapa,
-                                 ApplicationEventPublisher events) {
+                                 ApplicationEventPublisher events,
+                                 CandadoEquipo candado) {
         this.jugadores = jugadores;
         this.obtenerMapa = obtenerMapa;
         this.events = events;
+        this.candado = candado;
     }
 
     public MovimientoDto ejecutar(String matchId, String userId, Posicion destino) {
-        JugadorEnMapa jugador = jugadores.find(matchId, userId)
-                .orElseThrow(() -> new JugadorNoRegistradoException(matchId, userId));
+        String equipoId = jugadorDe(matchId, userId).getEquipoId();
         MapaIsometrico mapa = obtenerMapa.obtener(matchId);
-        JugadorEnMapa.Movimiento movimiento = jugador.mover(mapa, destino);
-        events.publishEvent(new PosicionActualizadaEvent(matchId, jugador.getEquipoId(), userId,
-                movimiento.hasta(), movimiento.ruta()));
-        return MovimientoDto.from(userId, movimiento);
+        // Se vuelve a leer dentro del candado: puede haberse movido desde otra instancia
+        return candado.ejecutar(matchId, equipoId, () -> {
+            JugadorEnMapa jugador = jugadorDe(matchId, userId);
+            JugadorEnMapa.Movimiento movimiento = jugador.mover(mapa, destino);
+            jugadores.guardar(jugador);
+            events.publishEvent(new PosicionActualizadaEvent(matchId, equipoId, userId,
+                    movimiento.hasta(), movimiento.ruta()));
+            return MovimientoDto.from(userId, movimiento);
+        });
+    }
+
+    private JugadorEnMapa jugadorDe(String matchId, String userId) {
+        return jugadores.find(matchId, userId).orElseThrow(() -> new JugadorNoRegistradoException(matchId, userId));
     }
 }

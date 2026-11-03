@@ -50,7 +50,7 @@ class InventarioUseCasesTest {
         jugadores = new JugadorEnMapaRepositoryEnMemoria();
         avisos = Collections.synchronizedList(new ArrayList<>());
         InventarioRepositoryEnMemoria inventarios = new InventarioRepositoryEnMemoria();
-        recolectar = new RecolectarObjetoUseCase(jugadores, obtenerMapa, inventarios, avisos::add);
+        recolectar = new RecolectarObjetoUseCase(jugadores, obtenerMapa, inventarios, avisos::add, CandadoEquipo.ninguno());
         consultar = new ConsultarInventarioUseCase(jugadores, inventarios);
     }
 

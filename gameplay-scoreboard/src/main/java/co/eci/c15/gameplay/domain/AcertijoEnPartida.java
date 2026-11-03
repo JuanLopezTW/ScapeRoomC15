@@ -33,6 +33,19 @@ public final class AcertijoEnPartida {
         this.componenteMapaId = Objects.requireNonNull(componenteMapaId);
     }
 
+    /** Reconstruye el estado tal como quedo guardado (estado compartido entre instancias). */
+    public static AcertijoEnPartida restaurar(String matchId, String equipoId, String componenteMapaId, Estado estado,
+                                              String poseedor, Instant bloqueadoEn, List<String> entrada) {
+        AcertijoEnPartida acertijo = new AcertijoEnPartida(matchId, equipoId, componenteMapaId);
+        acertijo.estado = Objects.requireNonNull(estado);
+        acertijo.poseedor = poseedor;
+        acertijo.bloqueadoEn = bloqueadoEn;
+        acertijo.entrada.addAll(entrada);
+        return acertijo;
+    }
+
+    public synchronized Optional<Instant> getBloqueadoEn() { return Optional.ofNullable(bloqueadoEn); }
+
     /**
      * Bloquea el acertijo para el jugador. Se puede tomar si está libre, si ya era suyo, si el
      * bloqueo venció (ttl) o si quien lo tenía ya no sigue en la partida (se desconectó).

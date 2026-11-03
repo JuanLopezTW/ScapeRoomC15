@@ -48,8 +48,8 @@ class ClickAcertijoUseCaseTest {
         estados = new AcertijosEnPartidaEnMemoria();
         AcertijoRepository catalogo = new CatalogoFijo();
         ElementoInteractivoRepository elementos = new ElementosFijos();
-        abrir = new AbrirAcertijoUseCase(jugadores, obtenerMapa, catalogo, elementos, estados);
-        clicks = new ClickAcertijoUseCase(jugadores, catalogo, elementos, estados);
+        abrir = new AbrirAcertijoUseCase(jugadores, obtenerMapa, catalogo, elementos, estados, CandadoEquipo.ninguno());
+        clicks = new ClickAcertijoUseCase(jugadores, catalogo, elementos, estados, CandadoEquipo.ninguno());
     }
 
     private JugadorEnMapa jugador(String equipo, String userId) {

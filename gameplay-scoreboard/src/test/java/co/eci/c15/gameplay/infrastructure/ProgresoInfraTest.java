@@ -1,5 +1,6 @@
 package co.eci.c15.gameplay.infrastructure;
 
+import co.eci.c15.gameplay.application.CandadoEquipo;
 import co.eci.c15.common.events.AcertijoResueltoEvent;
 import co.eci.c15.common.events.PartidaIniciadaEvent;
 import co.eci.c15.gameplay.application.ObtenerMapaUseCase;
@@ -40,7 +41,7 @@ class ProgresoInfraTest {
     void setUp() {
         avisos = new ArrayList<>();
         ProgresoPartidaUseCase useCase = new ProgresoPartidaUseCase(new ProgresoRepositoryEnMemoria(),
-                new ObtenerMapaUseCase(new MapaRepositoryEnMemoria(), new GeneradorMapa()), avisos::add);
+                new ObtenerMapaUseCase(new MapaRepositoryEnMemoria(), new GeneradorMapa()), avisos::add, CandadoEquipo.ninguno());
         listener = new ProgresoPartidaListener(useCase);
         mvc = MockMvcBuilders.standaloneSetup(new ProgresoController(useCase)).build();
     }

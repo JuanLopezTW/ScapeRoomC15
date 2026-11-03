@@ -38,7 +38,7 @@ class AbrirAcertijoUseCaseTest {
         jugadores = new JugadorEnMapaRepositoryEnMemoria();
         estados = new AcertijosEnPartidaEnMemoria();
         reloj = new RelojFijo(Instant.parse("2026-10-08T10:00:00Z"));
-        useCase = new AbrirAcertijoUseCase(jugadores, obtenerMapa, new CatalogoFijo(), new ElementosFijos(), estados, reloj);
+        useCase = new AbrirAcertijoUseCase(jugadores, obtenerMapa, new CatalogoFijo(), new ElementosFijos(), estados, CandadoEquipo.ninguno(), reloj);
     }
 
     private JugadorEnMapa jugador(String equipo, String userId, Posicion posicion) {

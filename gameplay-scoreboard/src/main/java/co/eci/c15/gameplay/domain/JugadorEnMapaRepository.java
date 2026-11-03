@@ -10,6 +10,9 @@ public interface JugadorEnMapaRepository {
     /** Registra al jugador solo si no estaba; devuelve el que quedo registrado. */
     JugadorEnMapa saveIfAbsent(JugadorEnMapa jugador);
 
+    /** Guarda los cambios del jugador (posicion, acertijo abierto) si sigue en el mapa. */
+    void guardar(JugadorEnMapa jugador);
+
     /** Saca al jugador del mapa; devuelve vacio si ya no estaba. */
     Optional<JugadorEnMapa> remove(String matchId, String userId);
 }

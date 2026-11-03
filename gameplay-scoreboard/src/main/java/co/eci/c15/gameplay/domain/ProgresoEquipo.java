@@ -20,6 +20,13 @@ public final class ProgresoEquipo {
         this.total = total;
     }
 
+    /** Reconstruye el progreso tal como quedo guardado (estado compartido entre instancias). */
+    public static ProgresoEquipo restaurar(String matchId, String equipoId, int total, List<String> resueltos) {
+        ProgresoEquipo progreso = new ProgresoEquipo(matchId, equipoId, total);
+        resueltos.forEach(progreso::registrarResuelto);
+        return progreso;
+    }
+
     /** @return true si es un acertijo nuevo para el equipo; repetirlo no cambia nada */
     public synchronized boolean registrarResuelto(String componenteMapaId) {
         return resueltos.add(Objects.requireNonNull(componenteMapaId));

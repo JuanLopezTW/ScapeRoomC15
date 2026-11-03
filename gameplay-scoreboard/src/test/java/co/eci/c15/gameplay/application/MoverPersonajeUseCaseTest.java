@@ -40,7 +40,7 @@ class MoverPersonajeUseCaseTest {
         jugadores = new JugadorEnMapaRepositoryEnMemoria();
         obtenerMapa = new ObtenerMapaUseCase(new MapaRepositoryEnMemoria(), new GeneradorMapa());
         publicados = new ArrayList<>();
-        mover = new MoverPersonajeUseCase(jugadores, obtenerMapa, publicados::add);
+        mover = new MoverPersonajeUseCase(jugadores, obtenerMapa, publicados::add, CandadoEquipo.ninguno());
         new RegistrarJugadoresUseCase(jugadores, obtenerMapa).ejecutar(MATCH, Map.of("e1", List.of("u1", "u2")));
         mapa = obtenerMapa.obtener(MATCH);
     }

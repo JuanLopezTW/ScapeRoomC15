@@ -12,9 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -24,17 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
  * varias instancias). Sin Docker se salta.
  */
 @Testcontainers(disabledWithoutDocker = true)
-@TestPropertySource(properties = "c15.estado.redis=true")
 class ChatEsperaRedisFlujoTest extends ChatEsperaFlujoTest {
-
-    @Container
-    @SuppressWarnings("resource")
-    static final GenericContainer<?> REDIS = new GenericContainer<>("redis:8.8.2-alpine").withExposedPorts(6379);
 
     @DynamicPropertySource
     static void redis(DynamicPropertyRegistry propiedades) {
-        propiedades.add("spring.data.redis.host", REDIS::getHost);
-        propiedades.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
+        RedisDePrueba.propiedades(propiedades);
     }
 
     @Autowired

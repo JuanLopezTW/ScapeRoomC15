@@ -1,5 +1,6 @@
 package co.eci.c15.gameplay.infrastructure.web;
 
+import co.eci.c15.gameplay.application.CandadoEquipo;
 import co.eci.c15.gameplay.application.MoverPersonajeUseCase;
 import co.eci.c15.gameplay.application.ObtenerMapaUseCase;
 import co.eci.c15.gameplay.application.RegistrarJugadoresUseCase;
@@ -33,7 +34,7 @@ class MovimientoControllerTest {
         ObtenerMapaUseCase obtenerMapa = new ObtenerMapaUseCase(new MapaRepositoryEnMemoria(), new GeneradorMapa());
         new RegistrarJugadoresUseCase(jugadores, obtenerMapa).ejecutar("p1", Map.of("e1", List.of("u1")));
         mvc = MockMvcBuilders.standaloneSetup(
-                new MovimientoController(new MoverPersonajeUseCase(jugadores, obtenerMapa, e -> { }))).build();
+                new MovimientoController(new MoverPersonajeUseCase(jugadores, obtenerMapa, e -> { }, CandadoEquipo.ninguno()))).build();
         mapa = obtenerMapa.obtener("p1");
         libre = new Posicion(mapa.getSpawn().x() + 1, mapa.getSpawn().y());
         if (!mapa.esTransitable(libre)) libre = new Posicion(mapa.getSpawn().x(), mapa.getSpawn().y() + 1);

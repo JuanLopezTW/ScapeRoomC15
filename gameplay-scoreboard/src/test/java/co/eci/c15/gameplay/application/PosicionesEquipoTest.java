@@ -40,7 +40,7 @@ class PosicionesEquipoTest {
                 .ejecutar(MATCH, Map.of("e1", List.of("a1", "a2"), "e2", List.of("b1")));
 
         PosicionActualizadaListener listener = new PosicionActualizadaListener(notifier);
-        mover = new MoverPersonajeUseCase(jugadores, obtenerMapa, e -> listener.onPosicionActualizada((PosicionActualizadaEvent) e));
+        mover = new MoverPersonajeUseCase(jugadores, obtenerMapa, e -> listener.onPosicionActualizada((PosicionActualizadaEvent) e), CandadoEquipo.ninguno());
         consultar = new ConsultarPosicionesEquipoUseCase(jugadores);
         desconectar = new DesconectarJugadorUseCase(jugadores, notifier);
 

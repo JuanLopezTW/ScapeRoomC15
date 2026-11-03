@@ -3,6 +3,7 @@ package co.eci.c15.gameplay.infrastructure.persistence;
 import co.eci.c15.gameplay.domain.AsignacionRoles;
 import co.eci.c15.gameplay.domain.Rol;
 import co.eci.c15.gameplay.domain.RolesRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
+@ConditionalOnProperty(name = "c15.estado.redis", havingValue = "false", matchIfMissing = true)
 public class RolesRepositoryEnMemoria implements RolesRepository {
 
     private final Map<String, Map<String, AsignacionRoles>> porPartida = new ConcurrentHashMap<>();

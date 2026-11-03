@@ -26,6 +26,14 @@ public final class JugadorEnMapa {
         this.posicion = Objects.requireNonNull(posicionInicial);
     }
 
+    /** Reconstruye al jugador tal como quedo guardado (estado compartido entre instancias). */
+    public static JugadorEnMapa restaurar(String matchId, String equipoId, String userId, Posicion posicion,
+                                          String acertijoAbierto) {
+        JugadorEnMapa jugador = new JugadorEnMapa(matchId, equipoId, userId, posicion);
+        jugador.acertijoAbierto = acertijoAbierto;
+        return jugador;
+    }
+
     public synchronized Movimiento mover(MapaIsometrico mapa, Posicion destino) {
         if (acertijoAbierto != null) throw new MovimientoInvalidoException("No puedes moverte mientras tienes abierto el acertijo " + acertijoAbierto);
         if (!mapa.dentro(destino)) throw new MovimientoInvalidoException("El destino esta fuera del mapa");

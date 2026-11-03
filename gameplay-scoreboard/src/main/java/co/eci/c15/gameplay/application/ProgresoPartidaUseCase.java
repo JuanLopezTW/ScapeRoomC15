@@ -23,31 +23,41 @@ public class ProgresoPartidaUseCase {
     private final ProgresoRepository progresos;
     private final ObtenerMapaUseCase obtenerMapa;
     private final ProgresoNotifier notifier;
+    private final CandadoEquipo candado;
+    /** Dentro de esta instancia (con todo en memoria el candado no hace nada). */
     private final Map<String, Object> bloqueos = new ConcurrentHashMap<>();
 
-    public ProgresoPartidaUseCase(ProgresoRepository progresos, ObtenerMapaUseCase obtenerMapa, ProgresoNotifier notifier) {
+    public ProgresoPartidaUseCase(ProgresoRepository progresos, ObtenerMapaUseCase obtenerMapa, ProgresoNotifier notifier,
+                                  CandadoEquipo candado) {
         this.progresos = progresos;
         this.obtenerMapa = obtenerMapa;
         this.notifier = notifier;
+        this.candado = candado;
     }
 
     /** Al iniciar la partida todos los equipos aparecen en 0 sobre el total del mapa. */
     public void iniciar(String matchId, Collection<String> equipoIds) {
-        synchronized (bloqueo(matchId)) {
-            int total = totalAcertijos(matchId);
-            equipoIds.forEach(equipoId -> progresos.obtener(matchId, equipoId, total));
-            notifier.notificar(foto(matchId));
-        }
+        int total = totalAcertijos(matchId);
+        candado.ejecutar(matchId, CandadoEquipo.PARTIDA, () -> {
+            synchronized (bloqueo(matchId)) {
+                equipoIds.forEach(equipoId -> progresos.obtener(matchId, equipoId, total));
+                notifier.notificar(foto(matchId));
+            }
+        });
     }
 
     /** Suma el acertijo al equipo; si ya estaba contado no se vuelve a avisar. */
     public void acertijoResuelto(AcertijoResueltoEvent evento) {
-        synchronized (bloqueo(evento.matchId())) {
-            ProgresoEquipo progreso = progresos.obtener(evento.matchId(), evento.equipoId(), totalAcertijos(evento.matchId()));
-            if (progreso.registrarResuelto(evento.componenteMapaId())) {
-                notifier.notificar(foto(evento.matchId()));
+        int total = totalAcertijos(evento.matchId());
+        candado.ejecutar(evento.matchId(), CandadoEquipo.PARTIDA, () -> {
+            synchronized (bloqueo(evento.matchId())) {
+                ProgresoEquipo progreso = progresos.obtener(evento.matchId(), evento.equipoId(), total);
+                if (progreso.registrarResuelto(evento.componenteMapaId())) {
+                    progresos.guardar(progreso);
+                    notifier.notificar(foto(evento.matchId()));
+                }
             }
-        }
+        });
     }
 
     public ProgresoPartidaDto consultar(String matchId) {

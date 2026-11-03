@@ -31,13 +31,16 @@ public class RecolectarObjetoUseCase {
     private final ObtenerMapaUseCase obtenerMapa;
     private final InventarioRepository inventarios;
     private final InventarioNotifier notifier;
+    private final CandadoEquipo candado;
 
     public RecolectarObjetoUseCase(JugadorEnMapaRepository jugadores, ObtenerMapaUseCase obtenerMapa,
-                                   InventarioRepository inventarios, InventarioNotifier notifier) {
+                                   InventarioRepository inventarios, InventarioNotifier notifier,
+                                   CandadoEquipo candado) {
         this.jugadores = jugadores;
         this.obtenerMapa = obtenerMapa;
         this.inventarios = inventarios;
         this.notifier = notifier;
+        this.candado = candado;
     }
 
     public InventarioDto ejecutar(String matchId, String userId, String componenteMapaId) {
@@ -51,18 +54,21 @@ public class RecolectarObjetoUseCase {
             throw new ObjetoLejosException(componenteMapaId);
         }
 
-        InventarioEquipo inventario = inventarios.obtener(matchId, jugador.getEquipoId());
-        // Agregar y avisar juntos: los avisos de un equipo llegan en el mismo orden que los cambios.
-        synchronized (inventario) {
-            if (!inventario.agregar(new ObjetoInventario(componenteMapaId, nombreDe(componenteMapaId), userId))) {
-                throw new ObjetoYaRecolectadoException(componenteMapaId);
+        // Agregar, guardar y avisar juntos: los avisos de un equipo llegan en el mismo orden que los cambios.
+        return candado.ejecutar(matchId, jugador.getEquipoId(), () -> {
+            InventarioEquipo inventario = inventarios.obtener(matchId, jugador.getEquipoId());
+            synchronized (inventario) {
+                if (!inventario.agregar(new ObjetoInventario(componenteMapaId, nombreDe(componenteMapaId), userId))) {
+                    throw new ObjetoYaRecolectadoException(componenteMapaId);
+                }
+                inventarios.guardar(inventario);
+                EventoNegocio.de(log, "objeto.recolectado").con("matchId", matchId).con("equipoId", jugador.getEquipoId())
+                        .con("objeto", componenteMapaId).con("userId", userId).info();
+                InventarioDto foto = InventarioDto.from(inventario);
+                notifier.notificar(foto);
+                return foto;
             }
-            EventoNegocio.de(log, "objeto.recolectado").con("matchId", matchId).con("equipoId", jugador.getEquipoId())
-                    .con("objeto", componenteMapaId).con("userId", userId).info();
-            InventarioDto foto = InventarioDto.from(inventario);
-            notifier.notificar(foto);
-            return foto;
-        }
+        });
     }
 
     private static boolean estanJuntos(Posicion jugador, Posicion objeto) {

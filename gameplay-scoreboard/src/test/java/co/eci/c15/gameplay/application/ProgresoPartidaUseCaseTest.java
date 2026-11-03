@@ -38,7 +38,7 @@ class ProgresoPartidaUseCaseTest {
                 new ComponenteMapa("llave-1", TipoComponente.LLAVE, new Posicion(1, 4)))));
         avisos = Collections.synchronizedList(new ArrayList<>());
         useCase = new ProgresoPartidaUseCase(new ProgresoRepositoryEnMemoria(),
-                new ObtenerMapaUseCase(mapas, new GeneradorMapa()), avisos::add);
+                new ObtenerMapaUseCase(mapas, new GeneradorMapa()), avisos::add, CandadoEquipo.ninguno());
     }
 
     private static AcertijoResueltoEvent resuelto(String equipo, String acertijo) {

@@ -38,15 +38,17 @@ public class ValidarSolucionUseCase {
     private final SolucionAcertijoRepository soluciones;
     private final AcertijoEnPartidaRepository estados;
     private final ApplicationEventPublisher events;
+    private final CandadoEquipo candado;
 
     public ValidarSolucionUseCase(JugadorEnMapaRepository jugadores, AcertijoRepository acertijos,
                                   SolucionAcertijoRepository soluciones, AcertijoEnPartidaRepository estados,
-                                  ApplicationEventPublisher events) {
+                                  ApplicationEventPublisher events, CandadoEquipo candado) {
         this.jugadores = jugadores;
         this.acertijos = acertijos;
         this.soluciones = soluciones;
         this.estados = estados;
         this.events = events;
+        this.candado = candado;
     }
 
     /** @param respuesta lo que envia el jugador; si es null se valida lo ingresado con clicks */
@@ -58,17 +60,28 @@ public class ValidarSolucionUseCase {
                 .orElseThrow(() -> new ComponenteSinAcertijoException(componenteMapaId));
         List<String> solucion = soluciones.findByComponenteMapaId(componenteMapaId)
                 .orElseThrow(() -> new SolucionNoDisponibleException(componenteMapaId));
-        AcertijoEnPartida estado = estados.obtener(matchId, jugador.getEquipoId(), componenteMapaId);
+        String equipoId = jugador.getEquipoId();
 
-        AcertijoEnPartida.Resultado resultado =
-                estado.intentarResolver(userId, respuesta, candidata -> ComparadorRespuestas.coincide(candidata, solucion));
+        AcertijoEnPartida.Resultado resultado = candado.ejecutar(matchId, equipoId, () -> {
+            AcertijoEnPartida estado = estados.obtener(matchId, equipoId, componenteMapaId);
+            AcertijoEnPartida.Resultado r = estado.intentarResolver(userId, respuesta,
+                    candidata -> ComparadorRespuestas.coincide(candidata, solucion));
+            estados.guardar(estado);
+            if (r == AcertijoEnPartida.Resultado.CORRECTA) {
+                jugadores.find(matchId, userId).ifPresent(quien -> {
+                    quien.cerrarAcertijo(componenteMapaId);
+                    jugadores.guardar(quien);
+                });
+            }
+            return r;
+        });
 
         if (resultado == AcertijoEnPartida.Resultado.INCORRECTA) {
             EventoNegocio.de(log, "acertijo.intento_fallido").con("matchId", matchId).con("equipoId", jugador.getEquipoId())
                     .con("acertijo", componenteMapaId).con("userId", userId).info();
             return ResultadoSolucionDto.error();
         }
-        jugador.cerrarAcertijo(componenteMapaId);
+        // El evento sale fuera del candado: el progreso y el resultado toman los suyos
         EventoNegocio.de(log, "acertijo.resuelto").con("matchId", matchId).con("equipoId", jugador.getEquipoId())
                 .con("acertijo", componenteMapaId).con("userId", userId).info();
         events.publishEvent(new AcertijoResueltoEvent(matchId, jugador.getEquipoId(), componenteMapaId, userId));

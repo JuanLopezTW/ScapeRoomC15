@@ -21,6 +21,13 @@ public final class InventarioEquipo {
         this.equipoId = Objects.requireNonNull(equipoId);
     }
 
+    /** Reconstruye el inventario tal como quedo guardado (estado compartido entre instancias). */
+    public static InventarioEquipo restaurar(String matchId, String equipoId, List<ObjetoInventario> objetos) {
+        InventarioEquipo inventario = new InventarioEquipo(matchId, equipoId);
+        objetos.forEach(inventario::agregar);
+        return inventario;
+    }
+
     /** @return true si el objeto es nuevo para el equipo; false si ya lo tenian */
     public synchronized boolean agregar(ObjetoInventario objeto) {
         return objetos.putIfAbsent(objeto.id(), objeto) == null;

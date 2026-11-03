@@ -54,9 +54,9 @@ class ValidarSolucionUseCaseTest {
         eventos = new ArrayList<>();
         AcertijoRepository catalogo = new CatalogoFijo();
         ElementoInteractivoRepository elementos = new ElementosFijos();
-        abrir = new AbrirAcertijoUseCase(jugadores, obtenerMapa, catalogo, elementos, estados);
-        clicks = new ClickAcertijoUseCase(jugadores, catalogo, elementos, estados);
-        validar = new ValidarSolucionUseCase(jugadores, catalogo, new SolucionesFijas(), estados, eventos::add);
+        abrir = new AbrirAcertijoUseCase(jugadores, obtenerMapa, catalogo, elementos, estados, CandadoEquipo.ninguno());
+        clicks = new ClickAcertijoUseCase(jugadores, catalogo, elementos, estados, CandadoEquipo.ninguno());
+        validar = new ValidarSolucionUseCase(jugadores, catalogo, new SolucionesFijas(), estados, eventos::add, CandadoEquipo.ninguno());
     }
 
     private JugadorEnMapa jugador(String equipo, String userId) {

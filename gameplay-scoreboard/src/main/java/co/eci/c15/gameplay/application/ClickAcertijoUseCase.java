@@ -26,13 +26,16 @@ public class ClickAcertijoUseCase {
     private final AcertijoRepository acertijos;
     private final ElementoInteractivoRepository elementos;
     private final AcertijoEnPartidaRepository estados;
+    private final CandadoEquipo candado;
 
     public ClickAcertijoUseCase(JugadorEnMapaRepository jugadores, AcertijoRepository acertijos,
-                                ElementoInteractivoRepository elementos, AcertijoEnPartidaRepository estados) {
+                                ElementoInteractivoRepository elementos, AcertijoEnPartidaRepository estados,
+                                CandadoEquipo candado) {
         this.jugadores = jugadores;
         this.acertijos = acertijos;
         this.elementos = elementos;
         this.estados = estados;
+        this.candado = candado;
     }
 
     /**
@@ -51,17 +54,23 @@ public class ClickAcertijoUseCase {
         if (token.length() > MAX_LONGITUD_VALOR) {
             throw new IllegalArgumentException("El valor del click no puede superar " + MAX_LONGITUD_VALOR + " caracteres");
         }
-        AcertijoEnPartida estado = estados.obtener(matchId, jugador.getEquipoId(), componenteMapaId);
-        estado.registrarClick(userId, token);
-        return EntradaAcertijoDto.from(estado);
+        return candado.ejecutar(matchId, jugador.getEquipoId(), () -> {
+            AcertijoEnPartida estado = estados.obtener(matchId, jugador.getEquipoId(), componenteMapaId);
+            estado.registrarClick(userId, token);
+            estados.guardar(estado);
+            return EntradaAcertijoDto.from(estado);
+        });
     }
 
     /** Borra lo ingresado para empezar de nuevo; solo quien lo tiene abierto. */
     public EntradaAcertijoDto reiniciar(String matchId, String componenteMapaId, String userId) {
         JugadorEnMapa jugador = jugadorDe(matchId, userId);
-        AcertijoEnPartida estado = estados.obtener(matchId, jugador.getEquipoId(), componenteMapaId);
-        estado.reiniciarEntrada(userId);
-        return EntradaAcertijoDto.from(estado);
+        return candado.ejecutar(matchId, jugador.getEquipoId(), () -> {
+            AcertijoEnPartida estado = estados.obtener(matchId, jugador.getEquipoId(), componenteMapaId);
+            estado.reiniciarEntrada(userId);
+            estados.guardar(estado);
+            return EntradaAcertijoDto.from(estado);
+        });
     }
 
     /** Lo que el equipo del jugador lleva ingresado en el acertijo. */
