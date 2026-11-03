@@ -5,53 +5,49 @@ import co.eci.c15.common.events.TimeUpEvent;
 import co.eci.c15.gameplay.domain.MatchTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
 
+/**
+ * Cronometro de cada partida (HU-34.5). Solo se guarda cuando empezo y cuanto dura: cualquier instancia
+ * calcula lo que falta. Cada segundo {@link #tickTodas} (lo llama {@code RelojPartidas}) avisa el tiempo de
+ * las partidas de las que esta instancia es dueña y, al agotarse, publica {@link TimeUpEvent} una sola vez.
+ */
 @Service
 public class MatchTimerService {
 
     private static final Logger log = LoggerFactory.getLogger(MatchTimerService.class);
-    private static final Duration TICK_INTERVAL = Duration.ofSeconds(1);
+    public static final Duration TICK_INTERVAL = Duration.ofSeconds(1);
 
-    private final Map<String, MatchTimer> timers = new ConcurrentHashMap<>();
-    private final Map<String, ScheduledFuture<?>> tasks = new ConcurrentHashMap<>();
-
-    private final TaskScheduler scheduler;
+    private final CronometrosPartida cronometros;
+    private final DuenoPartidas duenos;
     private final Clock clock;
     private final TimerNotifier notifier;
     private final ApplicationEventPublisher events;
 
-    public MatchTimerService(@Qualifier("gameplayScheduler") TaskScheduler scheduler,
+    public MatchTimerService(CronometrosPartida cronometros,
+                             DuenoPartidas duenos,
                              Clock clock,
                              TimerNotifier notifier,
                              ApplicationEventPublisher events) {
-        this.scheduler = scheduler;
+        this.cronometros = cronometros;
+        this.duenos = duenos;
         this.clock = clock;
         this.notifier = notifier;
         this.events = events;
     }
+
     public MatchTimer start(String matchId, Duration duration) {
         MatchTimer created = new MatchTimer(matchId, clock.instant(), duration);
-        MatchTimer existing = timers.putIfAbsent(matchId, created);
-        if (existing != null) {
-            return existing;
+        if (!cronometros.crear(created)) {
+            return cronometros.find(matchId).orElse(created);
         }
-        ScheduledFuture<?> task = scheduler.scheduleAtFixedRate(
-                () -> tick(matchId),
-                clock.instant().plus(TICK_INTERVAL),
-                TICK_INTERVAL);
-        tasks.put(matchId, task);
         notifier.notify(stateOf(created, clock.instant()));
         EventoNegocio.de(log, "cronometro.iniciado").con("matchId", matchId).con("segundos", duration.toSeconds()).info();
         return created;
@@ -59,40 +55,42 @@ public class MatchTimerService {
 
     /** Stops the timer without publishing {@link TimeUpEvent} (the match ended early). */
     public boolean stop(String matchId) {
-        MatchTimer timer = timers.remove(matchId);
-        if (timer == null) {
-            return false;
-        }
-        ScheduledFuture<?> task = tasks.remove(matchId);
-        if (task != null) {
-            task.cancel(false);
-        }
-        return true;
+        return cronometros.quitar(matchId);
     }
 
     public Optional<TimerState> find(String matchId) {
-        return Optional.ofNullable(timers.get(matchId))
-                .map(timer -> stateOf(timer, clock.instant()));
+        return cronometros.find(matchId).map(timer -> stateOf(timer, clock.instant()));
+    }
+
+    /** Un paso del reloj para cada partida de la que esta instancia es dueña. */
+    public void tickTodas() {
+        List<String> activos;
+        try {
+            activos = cronometros.activos();
+        } catch (RuntimeException e) {
+            // Si el reloj deja escapar un error, el scheduler no lo vuelve a llamar nunca
+            log.error("No se pudieron leer los cronometros activos", e);
+            return;
+        }
+        for (String matchId : activos) {
+            try {
+                if (duenos.esMia(matchId)) tick(matchId);
+            } catch (RuntimeException e) {
+                log.error("Error en el tick del cronometro de la partida {}", matchId, e);
+            }
+        }
     }
 
     void tick(String matchId) {
-        try {
-            MatchTimer timer = timers.get(matchId);
-            if (timer == null) {
-                return;
-            }
-            Instant now = clock.instant();
-            notifier.notify(stateOf(timer, now));
-            if (timer.isTimeUp(now) && timers.remove(matchId, timer)) {
-                ScheduledFuture<?> task = tasks.remove(matchId);
-                if (task != null) {
-                    task.cancel(false);
-                }
-                EventoNegocio.de(log, "cronometro.agotado").con("matchId", matchId).info();
-                events.publishEvent(new TimeUpEvent(matchId, now));
-            }
-        } catch (RuntimeException e) {
-            log.error("Error en el tick del cronometro de la partida {}", matchId, e);
+        MatchTimer timer = cronometros.find(matchId).orElse(null);
+        if (timer == null) {
+            return;
+        }
+        Instant now = clock.instant();
+        notifier.notify(stateOf(timer, now));
+        if (timer.isTimeUp(now) && cronometros.quitar(matchId)) {
+            EventoNegocio.de(log, "cronometro.agotado").con("matchId", matchId).info();
+            events.publishEvent(new TimeUpEvent(matchId, now));
         }
     }
 

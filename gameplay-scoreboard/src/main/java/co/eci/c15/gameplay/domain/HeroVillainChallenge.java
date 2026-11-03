@@ -76,11 +76,7 @@ public final class HeroVillainChallenge {
         lock.writeLock().lock();
         try {
             finished = true;
-            Map<String, Long> finalScores = scores();
-            long best = Collections.max(finalScores.values());
-            var leaders = finalScores.entrySet().stream().filter(e -> e.getValue() == best).toList();
-            String winner = leaders.size() == 1 ? leaders.get(0).getKey() : null;
-            return new ChallengeResult(matchId, winner, finalScores);
+            return ChallengeResult.deMarcador(matchId, scores());
         } finally {
             lock.writeLock().unlock();
         }

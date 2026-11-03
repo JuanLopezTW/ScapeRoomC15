@@ -1,6 +1,7 @@
 package co.eci.c15.gameplay.infrastructure.estado;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,7 +26,8 @@ public class EstadoPartidaRedis {
     static final String PREFIJO = "c15:partida:";
 
     /** Partes de una partida, para acortarles la vida al terminar. */
-    static final List<String> PARTES = List.of("mapa", "jugadores", "acertijos", "inventarios", "progreso", "roles");
+    static final List<String> PARTES = List.of("mapa", "jugadores", "acertijos", "inventarios", "progreso", "roles",
+            "cronometro", "reto", "reto:jugadores", "reto:puntajes", "equipos", "retosGanados", "resultado");
 
     private static final RedisScript<Long> GUARDAR_SI_EXISTE = RedisScript.of("""
             if redis.call('HEXISTS', KEYS[1], ARGV[1]) == 1 then
@@ -109,6 +111,14 @@ public class EstadoPartidaRedis {
             return json.writeValueAsString(valor);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("No se pudo guardar el estado de la partida", e);
+        }
+    }
+
+    <T> T deJson(String guardado, TypeReference<T> tipo) {
+        try {
+            return json.readValue(guardado, tipo);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Estado de partida corrupto en Redis", e);
         }
     }
 

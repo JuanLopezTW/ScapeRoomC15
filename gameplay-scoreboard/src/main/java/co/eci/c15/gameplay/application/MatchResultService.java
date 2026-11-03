@@ -18,7 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +25,10 @@ import java.util.stream.Collectors;
  * team solves every puzzle of its map. Score = solved puzzles (HU-33.5) + challenges won
  * (HU-44.5); ties are broken by solved puzzles and otherwise it is a draw. Once it ends the map
  * stays frozen (see {@link #isFinished}).
+ *
+ * <p>Teams, challenges won and the result live in {@link ResultadosPartida}, so any instance can end
+ * the match (the last puzzle may be solved anywhere); the result is saved once and only whoever saves
+ * it announces it.
  */
 @Service
 public class MatchResultService {
@@ -38,30 +41,28 @@ public class MatchResultService {
     private final MatchTimerService timers;
     private final MatchResultNotifier notifier;
     private final ApplicationEventPublisher events;
-
-    private final Map<String, List<String>> teamsByMatch = new ConcurrentHashMap<>();
-    private final Map<String, Map<String, Integer>> challengesWon = new ConcurrentHashMap<>();
-    private final Map<String, MatchResult> results = new ConcurrentHashMap<>();
+    private final ResultadosPartida resultados;
 
     public MatchResultService(ProgresoPartidaUseCase progress, ProgresoRepository progressRepository,
                               HeroVillainChallengeService challenges, MatchTimerService timers,
-                              MatchResultNotifier notifier, ApplicationEventPublisher events) {
+                              MatchResultNotifier notifier, ApplicationEventPublisher events,
+                              ResultadosPartida resultados) {
         this.progress = progress;
         this.progressRepository = progressRepository;
         this.challenges = challenges;
         this.timers = timers;
         this.notifier = notifier;
         this.events = events;
+        this.resultados = resultados;
     }
 
     public void matchStarted(String matchId, Collection<String> teamIds) {
-        teamsByMatch.putIfAbsent(matchId, teamIds.stream().sorted().toList());
+        resultados.guardarEquipos(matchId, teamIds.stream().sorted().toList());
     }
 
     public void challengeFinished(ChallengeFinishedEvent event) {
         if (event.winnerTeamId() == null) return;
-        challengesWon.computeIfAbsent(event.matchId(), id -> new ConcurrentHashMap<>())
-                .merge(event.winnerTeamId(), 1, Integer::sum);
+        resultados.sumarRetoGanado(event.matchId(), event.winnerTeamId());
     }
 
     /**
@@ -69,7 +70,7 @@ public class MatchResultService {
      * first) and ends the match if the team has now solved them all.
      */
     public void puzzleSolved(AcertijoResueltoEvent event) {
-        if (!teamsByMatch.containsKey(event.matchId())) return;
+        if (resultados.equipos(event.matchId()).isEmpty()) return;
         progress.acertijoResuelto(event);
         boolean completed = progressRepository.findByMatchId(event.matchId()).stream()
                 .anyMatch(p -> p.getEquipoId().equals(event.equipoId()) && p.estaCompleto());
@@ -81,9 +82,9 @@ public class MatchResultService {
     }
 
     public synchronized Optional<MatchResult> finish(String matchId, MatchResult.Reason reason) {
-        MatchResult existing = results.get(matchId);
-        if (existing != null) return Optional.of(existing);
-        List<String> teams = teamsByMatch.get(matchId);
+        Optional<MatchResult> existing = resultados.find(matchId);
+        if (existing.isPresent()) return existing;
+        List<String> teams = resultados.equipos(matchId).orElse(null);
         if (teams == null) return Optional.empty();
 
         // Closes a running challenge first so its winner is counted (publishes ChallengeFinishedEvent).
@@ -92,9 +93,9 @@ public class MatchResultService {
 
         Map<String, Integer> puzzles = progressRepository.findByMatchId(matchId).stream()
                 .collect(Collectors.toMap(ProgresoEquipo::getEquipoId, ProgresoEquipo::cantidadResueltos));
-        MatchResult result = MatchScoring.rank(matchId, reason, teams, puzzles,
-                challengesWon.getOrDefault(matchId, Map.of()));
-        results.put(matchId, result);
+        MatchResult result = MatchScoring.rank(matchId, reason, teams, puzzles, resultados.retosGanados(matchId));
+        // Si otra instancia lo termino al mismo tiempo, vale el suyo y ella lo anuncia
+        if (!resultados.guardar(result)) return resultados.find(matchId);
 
         notifier.notify(result);
         EventoNegocio.de(log, "partida.terminada").con("matchId", matchId).con("motivo", reason)
@@ -106,10 +107,10 @@ public class MatchResultService {
     }
 
     public boolean isFinished(String matchId) {
-        return results.containsKey(matchId);
+        return resultados.find(matchId).isPresent();
     }
 
     public Optional<MatchResult> find(String matchId) {
-        return Optional.ofNullable(results.get(matchId));
+        return resultados.find(matchId);
     }
 }

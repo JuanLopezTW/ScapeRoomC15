@@ -5,6 +5,7 @@ import co.eci.c15.common.events.ChallengeFinishedEvent;
 import co.eci.c15.common.events.MatchFinishedEvent;
 import co.eci.c15.gameplay.domain.MatchResult;
 import co.eci.c15.gameplay.domain.ProgresoRepository;
+import co.eci.c15.gameplay.infrastructure.estado.TiempoPartidaEnMemoria;
 import co.eci.c15.gameplay.infrastructure.persistence.ProgresoRepositoryEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,8 @@ class MatchResultServiceTest {
         timers = mock(MatchTimerService.class);
         notifier = mock(MatchResultNotifier.class);
         events = mock(ApplicationEventPublisher.class);
-        service = new MatchResultService(progress, progressRepository, challenges, timers, notifier, events);
+        service = new MatchResultService(progress, progressRepository, challenges, timers, notifier, events,
+                new TiempoPartidaEnMemoria().resultadosEnMemoria());
         service.matchStarted("m1", List.of("B", "A"));
         progressRepository.obtener("m1", "A", 3);
         progressRepository.obtener("m1", "B", 3);

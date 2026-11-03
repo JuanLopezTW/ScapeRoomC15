@@ -1,9 +1,9 @@
 package co.eci.c15.gameplay.application;
 
 import co.eci.c15.common.events.TimeUpEvent;
+import co.eci.c15.gameplay.infrastructure.estado.TiempoPartidaEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.scheduling.TaskScheduler;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -11,10 +11,10 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class MatchTimerServiceTest {
@@ -30,7 +30,8 @@ class MatchTimerServiceTest {
     }
 
     private MutableClock clock;
-    private TaskScheduler scheduler;
+    private CronometrosPartida cronometros;
+    private Set<String> mias;
     private List<TimerState> sent;
     private List<Object> events;
     private MatchTimerService service;
@@ -38,12 +39,12 @@ class MatchTimerServiceTest {
     @BeforeEach
     void setUp() {
         clock = new MutableClock(Instant.parse("2026-10-05T15:00:00Z"));
-        scheduler = mock(TaskScheduler.class);
-        doReturn(mock(ScheduledFuture.class)).when(scheduler)
-                .scheduleAtFixedRate(any(Runnable.class), any(Instant.class), any(Duration.class));
+        cronometros = new TiempoPartidaEnMemoria().cronometrosEnMemoria();
+        mias = ConcurrentHashMap.newKeySet();
+        mias.add("m1");
         sent = new CopyOnWriteArrayList<>();
         events = new CopyOnWriteArrayList<>();
-        service = new MatchTimerService(scheduler, clock, sent::add, events::add);
+        service = new MatchTimerService(cronometros, mias::contains, clock, sent::add, events::add);
     }
 
     @Test
@@ -51,23 +52,19 @@ class MatchTimerServiceTest {
         var first = service.start("m1", Duration.ofSeconds(60));
         var second = service.start("m1", Duration.ofSeconds(60));
         assertSame(first, second);
-        verify(scheduler, times(1))
-                .scheduleAtFixedRate(any(Runnable.class), any(Instant.class), any(Duration.class));
+        assertEquals(1, sent.size(), "solo el primero avisa");
+        assertEquals(List.of("m1"), cronometros.activos());
     }
 
     @Test
     void stopRemovesTheTimerWithoutTimeUp() {
-        ScheduledFuture<?> task = mock(ScheduledFuture.class);
-        doReturn(task).when(scheduler)
-                .scheduleAtFixedRate(any(Runnable.class), any(Instant.class), any(Duration.class));
         service.start("m1", Duration.ofSeconds(60));
 
         assertTrue(service.stop("m1"));
 
-        verify(task).cancel(false);
         assertTrue(service.find("m1").isEmpty());
         clock.advance(Duration.ofSeconds(61));
-        service.tick("m1");
+        service.tickTodas();
         assertTrue(events.isEmpty());
         assertFalse(service.stop("m1"));
     }
@@ -77,6 +74,17 @@ class MatchTimerServiceTest {
         service.start("m1", Duration.ofSeconds(60));
         clock.advance(Duration.ofSeconds(10));
         assertEquals(50, service.find("m1").orElseThrow().remainingSeconds());
+    }
+
+    @Test
+    void eachTickAnnouncesTheRemainingTime() {
+        service.start("m1", Duration.ofSeconds(60));
+        clock.advance(Duration.ofSeconds(1));
+
+        service.tickTodas();
+
+        assertEquals(59, sent.get(sent.size() - 1).remainingSeconds());
+        assertFalse(sent.get(sent.size() - 1).timeUp());
     }
 
     @Test
@@ -103,7 +111,35 @@ class MatchTimerServiceTest {
         go.countDown();
         pool.shutdown();
         assertTrue(pool.awaitTermination(5, TimeUnit.SECONDS));
-        verify(scheduler, times(1))
-                .scheduleAtFixedRate(any(Runnable.class), any(Instant.class), any(Duration.class));
+        assertEquals(1, sent.size());
+        assertEquals(1, cronometros.activos().size());
+    }
+
+    @Test
+    void onlyTheMatchesThisInstanceOwnsAreTicked() {
+        service.start("m1", Duration.ofSeconds(5));
+        service.start("m2", Duration.ofSeconds(5));
+        sent.clear();
+        clock.advance(Duration.ofSeconds(5));
+
+        service.tickTodas();
+
+        assertEquals(List.of("m1"), sent.stream().map(TimerState::matchId).toList());
+        assertEquals(List.of(new TimeUpEvent("m1", clock.instant())), events);
+        assertTrue(service.find("m2").isPresent(), "la otra partida la avanza su dueño");
+    }
+
+    @Test
+    void anErrorDoesNotStopTheClock() {
+        CronometrosPartida roto = mock(CronometrosPartida.class);
+        when(roto.activos()).thenThrow(new IllegalStateException("sin Redis"));
+        MatchTimerService conError = new MatchTimerService(roto, m -> true, clock, sent::add, events::add);
+        assertDoesNotThrow(conError::tickTodas);
+
+        service.start("m1", Duration.ofSeconds(60));
+        MatchTimerService fallaUna = new MatchTimerService(cronometros, m -> {
+            throw new IllegalStateException("una partida falla");
+        }, clock, sent::add, events::add);
+        assertDoesNotThrow(fallaUna::tickTodas);
     }
 }
