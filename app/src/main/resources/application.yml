@@ -30,6 +30,14 @@ c15:
   reto:
     # 5 s del aviso del front (ModalDesafio) + 20 s de juego: el reto corre desde que sale el aviso
     duracion: ${RETO_DURACION:25s}
+  stomp:
+    broker:
+      # false: broker en memoria (una sola instancia). true: RabbitMQ con el plugin STOMP (varias instancias)
+      relay: ${STOMP_RELAY:false}
+      host: ${STOMP_HOST:localhost}
+      puerto: ${STOMP_PUERTO:61613}
+      usuario: ${STOMP_USUARIO:}
+      clave: ${STOMP_CLAVE:}
 
 # Logs en JSON salvo con el perfil "local"; el traceId lo agrega Micrometer Tracing
 logging:

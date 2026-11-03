@@ -1,6 +1,7 @@
 package co.eci.c15.app.config;
 
 import co.eci.c15.app.observabilidad.StompTrazaInterceptor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -12,7 +13,8 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 /**
- * Configuracion STOMP unica para todo el monolito (gameplay, salas, chat).
+ * Configuracion STOMP unica para todo el monolito (gameplay, salas, chat). Con una instancia basta el broker
+ * en memoria; con varias, {@code c15.stomp.broker.relay=true} pasa los topics por RabbitMQ.
  *
  * Topics acordados:
  *   /topic/salas                                   catalogo de salas
@@ -28,6 +30,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  */
 @Configuration
 @EnableWebSocketMessageBroker
+@EnableConfigurationProperties(BrokerStompProperties.class)
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     /**
@@ -39,15 +42,24 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final StompTrazaInterceptor traza;
     private final StompSeguridadInterceptor seguridad;
+    private final BrokerStompProperties broker;
 
-    public WebSocketConfig(@Lazy StompTrazaInterceptor traza, @Lazy StompSeguridadInterceptor seguridad) {
+    public WebSocketConfig(@Lazy StompTrazaInterceptor traza, @Lazy StompSeguridadInterceptor seguridad,
+                           BrokerStompProperties broker) {
         this.traza = traza;
         this.seguridad = seguridad;
+        this.broker = broker;
     }
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(traza, seguridad);
+        registration.interceptors(traza, seguridad, new LatidosClienteInterceptor());
+        if (broker.relay()) registration.interceptors(DestinosRabbitInterceptor.haciaRabbit());
+    }
+
+    @Override
+    public void configureClientOutboundChannel(ChannelRegistration registration) {
+        if (broker.relay()) registration.interceptors(DestinosRabbitInterceptor.haciaCliente());
     }
 
     @Override
@@ -57,9 +69,25 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic")
-                .setHeartbeatValue(LATIDO_MS)
-                .setTaskScheduler(latidosStompScheduler());
+        if (broker.relay()) {
+            // Cada cliente abre su propia conexion al broker con este usuario; el "sistema" es la que usa
+            // el back para publicar (SimpMessagingTemplate). Ambas mandan y piden latidos al broker.
+            registry.enableStompBrokerRelay("/topic")
+                    .setRelayHost(broker.host())
+                    .setRelayPort(broker.puerto())
+                    .setClientLogin(broker.usuario())
+                    .setClientPasscode(broker.clave())
+                    .setSystemLogin(broker.usuario())
+                    .setSystemPasscode(broker.clave())
+                    // Si no, Rabbit toma el "host" que mande el cliente (localhost) como virtual host
+                    .setVirtualHost("/")
+                    .setAutoStartup(broker.autoArranque());
+            registry.configureBrokerChannel().interceptors(DestinosRabbitInterceptor.haciaRabbit());
+        } else {
+            registry.enableSimpleBroker("/topic")
+                    .setHeartbeatValue(LATIDO_MS)
+                    .setTaskScheduler(latidosStompScheduler());
+        }
         registry.setApplicationDestinationPrefixes("/app");
     }
 

@@ -15,10 +15,12 @@ services:
       timeout: 3s
       retries: 20
 
-  back:
+  back: &back
     build: .
     depends_on:
       db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     environment:
       DB_HOST: db
@@ -30,6 +32,11 @@ services:
       RETO_DURACION: ${RETO_DURACION}
       AUTH0_ISSUER: ${AUTH0_ISSUER:-https://escaperoomc15.us.auth0.com/}
       AUTH0_AUDIENCE: ${AUTH0_AUDIENCE:-https://api.escaperoomc15}
+      # Los topics STOMP pasan por RabbitMQ: asi varias instancias del back se reparten los mensajes
+      STOMP_RELAY: "true"
+      STOMP_HOST: rabbitmq
+      STOMP_USUARIO: ${RABBIT_USUARIO}
+      STOMP_CLAVE: ${RABBIT_CLAVE}
       # Logs legibles en la consola y copia a Grafana (http://localhost:3000)
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
       OTEL_ACTIVO: "true"
@@ -37,6 +44,30 @@ services:
       OTEL_LOGS_URL: http://observabilidad:4318/v1/logs
     ports:
       - "${BACK_PORT}:8080"
+
+  # Segunda instancia del back en el 8081 para probar varias instancias: docker compose --profile escalado up -d
+  back-2:
+    <<: *back
+    profiles: ["escalado"]
+    ports:
+      - "8081:8080"
+
+  # Broker de los topics STOMP (plugin STOMP en 61613); consola en http://localhost:15672
+  rabbitmq:
+    image: rabbitmq:4.3.6-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USUARIO}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_CLAVE}
+    volumes:
+      - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+    ports:
+      - "127.0.0.1:15672:15672"
+      - "127.0.0.1:61613:61613"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
 
   # Grafana con Tempo (trazas) y Loki (logs), solo para desarrollo
   observabilidad:
