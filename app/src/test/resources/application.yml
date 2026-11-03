@@ -19,6 +19,8 @@ spring:
 c15:
   salas:
     gracia-desconexion: 200ms
+    # Los contextos de prueba comparten la base H2: el barrendero (solo con Redis) no debe borrar salas de otros tests
+    barrido: 1h
   partida:
     cuenta-regresiva: 1s
 

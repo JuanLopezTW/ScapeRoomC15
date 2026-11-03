@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.salas.infrastructure.estado.CuentasRegresivasEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -25,6 +26,7 @@ class CuentaRegresivaPartidaTest {
     private TaskScheduler scheduler;
     private ArranquePartidaNotifier notifier;
     private ScheduledFuture<?> tarea;
+    private CuentasRegresivas cuentas;
     private CuentaRegresivaPartida cuenta;
 
     @BeforeEach
@@ -35,7 +37,8 @@ class CuentaRegresivaPartidaTest {
         tarea = mock(ScheduledFuture.class);
         when(scheduler.getClock()).thenReturn(Clock.fixed(AHORA, ZoneOffset.UTC));
         doReturn(tarea).when(scheduler).schedule(any(Runnable.class), any(Instant.class));
-        cuenta = new CuentaRegresivaPartida(iniciar, scheduler, notifier, Duration.ofSeconds(5));
+        cuentas = new CuentasRegresivasEnMemoria();
+        cuenta = new CuentaRegresivaPartida(iniciar, scheduler, notifier, cuentas, Duration.ofSeconds(5));
     }
 
     private Runnable programada() {
@@ -118,6 +121,41 @@ class CuentaRegresivaPartidaTest {
         cuenta.evaluar("s1");
 
         vieja.run();
+
+        verify(iniciar, never()).iniciar(anyString());
+    }
+
+    @Test
+    void siOtraInstanciaYaLlevaLaCuentaEstaNoProgramaNada() {
+        when(iniciar.listaParaIniciar("s1")).thenReturn(true);
+        cuentas.empezar("s1", "de-otra-instancia", Duration.ofSeconds(15));
+
+        cuenta.evaluar("s1");
+
+        verify(scheduler, never()).schedule(any(Runnable.class), any(Instant.class));
+        verifyNoInteractions(notifier);
+        assertTrue(cuenta.enCurso("s1"));
+    }
+
+    @Test
+    void siAlguienSeDesmarcaEnOtraInstanciaSeCancelaLaCuentaDeLaOtra() {
+        when(iniciar.listaParaIniciar("s1")).thenReturn(false);
+        cuentas.empezar("s1", "de-otra-instancia", Duration.ofSeconds(15));
+
+        cuenta.evaluar("s1");
+
+        verify(notifier).cancelada("s1");
+        assertFalse(cuenta.enCurso("s1"));
+    }
+
+    @Test
+    void siLaCancelaronEnOtraInstanciaSuTareaYaNoArrancaLaPartida() {
+        when(iniciar.listaParaIniciar("s1")).thenReturn(true);
+        cuenta.evaluar("s1");
+        Runnable propia = programada();
+        cuentas.cancelar("s1"); // otra instancia vio que alguien se desmarco
+
+        propia.run();
 
         verify(iniciar, never()).iniciar(anyString());
     }

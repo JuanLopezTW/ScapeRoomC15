@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
@@ -67,6 +69,18 @@ public class PresenciaSalaRedis implements PresenciaSala {
     public boolean conectado(String salaId, String userId) {
         Long vigentes = redis.opsForZSet().count(clave(salaId, userId), ahora(), Double.POSITIVE_INFINITY);
         return vigentes != null && vigentes > 0;
+    }
+
+    @Override
+    public boolean hayAlguien(String salaId) {
+        ScanOptions patron = ScanOptions.scanOptions().match(PREFIJO + salaId + ":*").count(100).build();
+        try (Cursor<String> claves = redis.scan(patron)) {
+            while (claves.hasNext()) {
+                Long vigentes = redis.opsForZSet().count(claves.next(), ahora(), Double.POSITIVE_INFINITY);
+                if (vigentes != null && vigentes > 0) return true;
+            }
+        }
+        return false;
     }
 
     /** Vuelve a marcar las conexiones de esta instancia (tambien las repone si Redis se reinicio). */

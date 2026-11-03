@@ -1,0 +1,19 @@
+# Dos instancias del back detras de nginx, para probar el escalado en local:
+#   docker compose -f docker-compose.yml -f docker-compose.escalado.yml up -d --build
+# El balanceador queda en http://localhost:8090 (las instancias siguen sueltas en 8080 y 8081 para depurar).
+# Para volver a lo normal: docker compose -f docker-compose.yml -f docker-compose.escalado.yml down nginx back-2
+# y luego docker compose up -d
+services:
+  back-2:
+    # Sin perfil: con este archivo la segunda instancia arranca siempre
+    profiles: !reset []
+
+  nginx:
+    image: nginx:1.30.5-alpine
+    depends_on:
+      - back
+      - back-2
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8090:80"

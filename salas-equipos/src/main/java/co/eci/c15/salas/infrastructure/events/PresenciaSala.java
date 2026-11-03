@@ -12,4 +12,7 @@ public interface PresenciaSala {
 
     /** Si el jugador tiene al menos una conexion abierta en esa sala, en cualquier instancia. */
     boolean conectado(String salaId, String userId);
+
+    /** Si alguien (quien sea) tiene el lobby de la sala abierto, en cualquier instancia. */
+    boolean hayAlguien(String salaId);
 }

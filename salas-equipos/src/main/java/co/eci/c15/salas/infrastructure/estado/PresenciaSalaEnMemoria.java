@@ -30,4 +30,9 @@ public class PresenciaSalaEnMemoria implements PresenciaSala {
     public boolean conectado(String salaId, String userId) {
         return sesiones.containsValue(new Quien(salaId, userId));
     }
+
+    @Override
+    public boolean hayAlguien(String salaId) {
+        return sesiones.values().stream().anyMatch(q -> q.salaId().equals(salaId));
+    }
 }

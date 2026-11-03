@@ -37,6 +37,8 @@ c15:
   salas:
     # Lo que espera el back antes de cerrar la sala si se desconecto el anfitrion (los invitados salen de una)
     gracia-desconexion: 20s
+    # Con Redis: cada cuanto una instancia cierra las salas huerfanas (en espera sin nadie, o sin partida viva)
+    barrido: 60s
   partida:
     duracion: ${PARTIDA_DURACION:30m}
     cuenta-regresiva: 5s

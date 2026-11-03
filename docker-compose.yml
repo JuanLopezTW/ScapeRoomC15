@@ -43,6 +43,8 @@ services:
       ESTADO_REDIS: "true"
       REDIS_HOST: redis
       REDIS_CLAVE: ${REDIS_CLAVE}
+      # Cada cuanto se cierran las salas huerfanas (solo con Redis)
+      C15_SALAS_BARRIDO: ${SALAS_BARRIDO:-60s}
       # Logs legibles en la consola y copia a Grafana (http://localhost:3000)
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
       OTEL_ACTIVO: "true"
