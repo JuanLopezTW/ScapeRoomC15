@@ -14,7 +14,7 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 /**
  * Cuando se cae un WebSocket no hay peticion ni frame, solo este evento: se abre aqui la traza y el contexto
- * para que todo lo que hagan sus listeners (salir de la sala, salir del mapa) quede conectado.
+ * para que lo que hagan sus listeners (salir de la sala, salir del mapa) quede conectado.
  */
 public class DesconexionConTrazaMulticaster extends SimpleApplicationEventMulticaster {
 

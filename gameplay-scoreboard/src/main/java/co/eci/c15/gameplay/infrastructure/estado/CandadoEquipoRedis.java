@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Primary;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -20,7 +21,10 @@ import java.util.function.Supplier;
  * propio. Es reentrante dentro del mismo hilo (abrir un acertijo consulta a un companero del mismo equipo).
  */
 @Component
+// Nunca convive con el adaptador en memoria (lo decide c15.estado.redis); @Primary solo le aclara
+// al analisis estatico cual usar, porque no evalua el interruptor.
 @ConditionalOnProperty(name = "c15.estado.redis", havingValue = "true")
+@Primary
 public class CandadoEquipoRedis implements CandadoEquipo {
 
     static final Duration VIDA = Duration.ofSeconds(5);

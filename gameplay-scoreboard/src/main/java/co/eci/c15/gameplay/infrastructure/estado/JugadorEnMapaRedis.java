@@ -5,12 +5,16 @@ import co.eci.c15.gameplay.domain.JugadorEnMapaRepository;
 import co.eci.c15.gameplay.domain.Posicion;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
+// Nunca convive con el adaptador en memoria (lo decide c15.estado.redis); @Primary solo le aclara
+// al analisis estatico cual usar, porque no evalua el interruptor.
 @ConditionalOnProperty(name = "c15.estado.redis", havingValue = "true")
+@Primary
 public class JugadorEnMapaRedis implements JugadorEnMapaRepository {
 
     record Guardado(String matchId, String equipoId, String userId, Posicion posicion, String acertijoAbierto) {

@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * Broker de los topics STOMP. Apagado (por defecto) usa el broker en memoria de Spring, que solo sirve
- * con una instancia: lo publicado en una no le llega a quien esta conectado a otra. Encendido, todo pasa
+ * con una instancia: lo publicado en una no le llega a quien esta conectado a otra. Encendido, cada mensaje pasa
  * por RabbitMQ (plugin STOMP) y cada instancia recibe lo de las demas.
  *
  * @param relay        si se usa RabbitMQ

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 
@@ -14,7 +15,10 @@ import static co.eci.c15.chat.infrastructure.persistence.ChatEnMemoria.MAX_MENSA
 
 /** Historial de cada canal como lista de Redis: solo los ultimos mensajes y con caducidad. */
 @Repository
+// Nunca convive con el adaptador en memoria (lo decide c15.estado.redis); @Primary solo le aclara
+// al analisis estatico cual usar, porque no evalua el interruptor.
 @ConditionalOnProperty(name = "c15.estado.redis", havingValue = "true")
+@Primary
 public class ChatRedis implements ChatRepository {
 
     static final String PREFIJO = "c15:chat:";

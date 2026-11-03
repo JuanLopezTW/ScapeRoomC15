@@ -13,7 +13,7 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 /**
- * Configuracion STOMP unica para todo el monolito (gameplay, salas, chat). Con una instancia basta el broker
+ * Configuracion STOMP unica para el monolito entero (gameplay, salas, chat). Con una instancia basta el broker
  * en memoria; con varias, {@code c15.stomp.broker.relay=true} pasa los topics por RabbitMQ.
  *
  * Topics acordados:

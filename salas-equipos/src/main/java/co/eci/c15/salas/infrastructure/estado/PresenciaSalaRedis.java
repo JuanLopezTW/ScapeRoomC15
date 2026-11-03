@@ -8,6 +8,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Primary;
 
 import java.time.Duration;
 import java.util.Map;
@@ -19,7 +20,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * conexiones dejan de contar solas en {@link #VIDA} (nadie tiene que limpiar), y la clave entera caduca.
  */
 @Component
+// Nunca convive con el adaptador en memoria (lo decide c15.estado.redis); @Primary solo le aclara
+// al analisis estatico cual usar, porque no evalua el interruptor.
 @ConditionalOnProperty(name = "c15.estado.redis", havingValue = "true")
+@Primary
 public class PresenciaSalaRedis implements PresenciaSala {
 
     static final String PREFIJO = "c15:salas:presencia:";
@@ -77,6 +81,6 @@ public class PresenciaSalaRedis implements PresenciaSala {
     }
 
     private double ahora() {
-        return scheduler.getClock().millis();
+        return (double) scheduler.getClock().millis();
     }
 }

@@ -53,12 +53,7 @@ class LimiteEnviosRedisTest extends RedisDePrueba {
         for (int i = 0; i < intentos; i++) {
             resultados.add(hilos.submit(() -> {
                 largada.await();
-                try {
-                    limite.registrar("ana", AHORA);
-                    return true;
-                } catch (DemasiadosMensajesException e) {
-                    return false;
-                }
+                return intentar();
             }));
         }
         largada.countDown();
@@ -67,5 +62,14 @@ class LimiteEnviosRedisTest extends RedisDePrueba {
         hilos.shutdown();
 
         assertEquals(LimiteEnvios.MAX_MENSAJES, aceptados);
+    }
+
+    private boolean intentar() {
+        try {
+            limite.registrar("ana", AHORA);
+            return true;
+        } catch (DemasiadosMensajesException e) {
+            return false;
+        }
     }
 }

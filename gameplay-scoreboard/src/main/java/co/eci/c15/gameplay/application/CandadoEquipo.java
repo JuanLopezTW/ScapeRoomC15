@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 /**
  * Serializa los cambios al estado de un equipo (o de toda la partida) entre instancias del back: leer el
  * estado, cambiarlo y guardarlo es un solo paso aunque dos jugadores del equipo actuen a la vez en
- * instancias distintas. Con todo en memoria no hace falta: los objetos del dominio ya son atomicos.
+ * instancias distintas. Con el estado en memoria no hace falta: los objetos del dominio ya son atomicos.
  */
 public interface CandadoEquipo {
 

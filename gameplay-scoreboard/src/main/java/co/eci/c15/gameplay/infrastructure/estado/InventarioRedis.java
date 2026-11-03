@@ -5,11 +5,15 @@ import co.eci.c15.gameplay.domain.InventarioRepository;
 import co.eci.c15.gameplay.domain.ObjetoInventario;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 
 @Repository
+// Nunca convive con el adaptador en memoria (lo decide c15.estado.redis); @Primary solo le aclara
+// al analisis estatico cual usar, porque no evalua el interruptor.
 @ConditionalOnProperty(name = "c15.estado.redis", havingValue = "true")
+@Primary
 public class InventarioRedis implements InventarioRepository {
 
     record Guardado(String matchId, String equipoId, List<ObjetoInventario> objetos) {

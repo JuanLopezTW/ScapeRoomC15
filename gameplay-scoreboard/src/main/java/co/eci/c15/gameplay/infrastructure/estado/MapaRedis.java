@@ -7,6 +7,7 @@ import co.eci.c15.gameplay.domain.Posicion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Primary;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -22,7 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * aviso no llega, cuando pasa la vida de la partida.
  */
 @Repository
+// Nunca convive con el adaptador en memoria (lo decide c15.estado.redis); @Primary solo le aclara
+// al analisis estatico cual usar, porque no evalua el interruptor.
 @ConditionalOnProperty(name = "c15.estado.redis", havingValue = "true")
+@Primary
 public class MapaRedis implements MapaRepository {
 
     record Guardado(String matchId, int ancho, int alto, Posicion spawn, List<ComponenteMapa> componentes) {

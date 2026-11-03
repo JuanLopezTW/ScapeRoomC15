@@ -4,13 +4,17 @@ import co.eci.c15.gameplay.domain.AcertijoEnPartida;
 import co.eci.c15.gameplay.domain.AcertijoEnPartidaRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
+import org.springframework.context.annotation.Primary;
 
 import java.time.Instant;
 import java.util.List;
 
 /** Estado de cada acertijo por equipo: un campo {@code equipoId|componenteMapaId} del hash de la partida. */
 @Repository
+// Nunca convive con el adaptador en memoria (lo decide c15.estado.redis); @Primary solo le aclara
+// al analisis estatico cual usar, porque no evalua el interruptor.
 @ConditionalOnProperty(name = "c15.estado.redis", havingValue = "true")
+@Primary
 public class AcertijosEnPartidaRedis implements AcertijoEnPartidaRepository {
 
     record Guardado(String matchId, String equipoId, String componenteMapaId, AcertijoEnPartida.Estado estado,

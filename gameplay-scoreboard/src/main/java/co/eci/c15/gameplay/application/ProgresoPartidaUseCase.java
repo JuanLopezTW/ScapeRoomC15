@@ -24,7 +24,7 @@ public class ProgresoPartidaUseCase {
     private final ObtenerMapaUseCase obtenerMapa;
     private final ProgresoNotifier notifier;
     private final CandadoEquipo candado;
-    /** Dentro de esta instancia (con todo en memoria el candado no hace nada). */
+    /** Dentro de esta instancia (con el estado en memoria el candado no hace nada). */
     private final Map<String, Object> bloqueos = new ConcurrentHashMap<>();
 
     public ProgresoPartidaUseCase(ProgresoRepository progresos, ObtenerMapaUseCase obtenerMapa, ProgresoNotifier notifier,
