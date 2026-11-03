@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
@@ -18,7 +17,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerMapping;
 
 import java.io.IOException;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -31,7 +29,6 @@ public class RegistroPeticionesFilter extends OncePerRequestFilter implements Or
     static final String CABECERA_TRAZA = "X-Trace-Id";
 
     private static final Logger log = LoggerFactory.getLogger(RegistroPeticionesFilter.class);
-    private static final Pattern RECURSO = Pattern.compile("^/(?:api/(?:chat/)?|dev/)(salas|partidas)/([A-Za-z0-9-]{1,64})(?:/.*)?$");
     /** Llegan decenas por segundo por jugador: registrarlas una a una solo seria ruido. */
     private static final Pattern FRECUENTES = Pattern.compile("^/api/partidas/[^/]+/(?:reto/clicks|acertijos/[^/]+/clicks)$");
     private static final int MAX_RUTA = 120;
@@ -57,7 +54,7 @@ public class RegistroPeticionesFilter extends OncePerRequestFilter implements Or
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         long inicio = System.nanoTime();
-        ponerRecursoEnContexto(request.getRequestURI());
+        ContextoLog.ponerRecurso(request.getRequestURI());
         escribirTraza(response);
         try {
             chain.doFilter(request, response);
@@ -66,23 +63,17 @@ public class RegistroPeticionesFilter extends OncePerRequestFilter implements Or
             registrar(request, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, inicio, e);
             throw e;
         } finally {
-            MDC.remove(ContextoLog.USER_ID);
-            MDC.remove(ContextoLog.SALA_ID);
-            MDC.remove(ContextoLog.MATCH_ID);
-        }
-    }
-
-    private static void ponerRecursoEnContexto(String uri) {
-        Matcher recurso = RECURSO.matcher(uri);
-        if (recurso.matches()) {
-            MDC.put("salas".equals(recurso.group(1)) ? ContextoLog.SALA_ID : ContextoLog.MATCH_ID, recurso.group(2));
+            ContextoLog.limpiar();
         }
     }
 
     private void escribirTraza(HttpServletResponse response) {
         Tracer actual = tracer.getIfAvailable();
         Span span = actual != null ? actual.currentSpan() : null;
-        if (span != null) response.setHeader(CABECERA_TRAZA, span.context().traceId());
+        if (span == null) return;
+        response.setHeader(CABECERA_TRAZA, span.context().traceId());
+        // El front vive en otro dominio: sin esto el navegador no le deja leer la cabecera
+        response.setHeader("Access-Control-Expose-Headers", CABECERA_TRAZA);
     }
 
     private static void registrar(HttpServletRequest request, int estado, long inicio, Throwable error) {

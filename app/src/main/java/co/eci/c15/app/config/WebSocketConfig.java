@@ -1,5 +1,6 @@
 package co.eci.c15.app.config;
 
+import co.eci.c15.app.observabilidad.StompTrazaInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -36,15 +37,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
      */
     private static final long[] LATIDO_MS = {10_000, 0};
 
+    private final StompTrazaInterceptor traza;
     private final StompSeguridadInterceptor seguridad;
 
-    public WebSocketConfig(@Lazy StompSeguridadInterceptor seguridad) {
+    public WebSocketConfig(@Lazy StompTrazaInterceptor traza, @Lazy StompSeguridadInterceptor seguridad) {
+        this.traza = traza;
         this.seguridad = seguridad;
     }
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(seguridad);
+        registration.interceptors(traza, seguridad);
     }
 
     @Override
