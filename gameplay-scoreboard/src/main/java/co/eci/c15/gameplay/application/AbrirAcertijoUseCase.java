@@ -1,5 +1,6 @@
 package co.eci.c15.gameplay.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.gameplay.domain.Acertijo;
 import co.eci.c15.gameplay.domain.AcertijoEnPartida;
 import co.eci.c15.gameplay.domain.AcertijoEnPartidaRepository;
@@ -13,6 +14,8 @@ import co.eci.c15.gameplay.domain.JugadorNoRegistradoException;
 import co.eci.c15.gameplay.domain.TipoComponente;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -27,6 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Service
 public class AbrirAcertijoUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(AbrirAcertijoUseCase.class);
 
     public static final Duration TTL_BLOQUEO = Duration.ofMinutes(5);
 
@@ -75,6 +80,8 @@ public class AbrirAcertijoUseCase {
             desplazado.get()
                     .flatMap(anterior -> jugadores.find(matchId, anterior))
                     .ifPresent(anterior -> anterior.cerrarAcertijo(componenteMapaId));
+            EventoNegocio.de(log, "acertijo.abierto").con("matchId", matchId).con("equipoId", jugador.getEquipoId())
+                    .con("acertijo", componenteMapaId).con("userId", userId).info();
         }
         return VisualizarAcertijoDto.from(acertijo, estado, elementos.findByAcertijoId(acertijo.getId()));
     }

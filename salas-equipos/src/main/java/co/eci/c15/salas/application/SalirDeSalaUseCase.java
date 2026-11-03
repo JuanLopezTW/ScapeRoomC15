@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.common.events.SalaCerradaEvent;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.EquipoRepository;
@@ -8,6 +9,8 @@ import co.eci.c15.salas.domain.SalaRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
@@ -18,6 +21,8 @@ import java.util.Optional;
  */
 @Service
 public class SalirDeSalaUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(SalirDeSalaUseCase.class);
 
     public enum Resultado { SALIO, SALA_CERRADA, NADA }
 
@@ -51,6 +56,7 @@ public class SalirDeSalaUseCase {
             notifier.cerrada(salaId);
             events.publishEvent(new SalaActualizadaEvent(salaId));
             events.publishEvent(new SalaCerradaEvent(salaId));
+            EventoNegocio.de(log, "sala.cerrada").con("salaId", salaId).con("motivo", "anfitrion_salio").info();
             return Resultado.SALA_CERRADA;
         }
 
@@ -64,6 +70,7 @@ public class SalirDeSalaUseCase {
         sala.retirarJugador(userId);
         salas.save(sala);
         events.publishEvent(new SalaActualizadaEvent(salaId));
+        EventoNegocio.de(log, "sala.jugador_salio").con("salaId", salaId).con("userId", userId).info();
         return Resultado.SALIO;
     }
 }

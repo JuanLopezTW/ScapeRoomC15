@@ -1,5 +1,6 @@
 package co.eci.c15.gameplay.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.common.events.TimeUpEvent;
 import co.eci.c15.gameplay.domain.MatchTimer;
 import org.slf4j.Logger;
@@ -52,6 +53,7 @@ public class MatchTimerService {
                 TICK_INTERVAL);
         tasks.put(matchId, task);
         notifier.notify(stateOf(created, clock.instant()));
+        EventoNegocio.de(log, "cronometro.iniciado").con("matchId", matchId).con("segundos", duration.toSeconds()).info();
         return created;
     }
 
@@ -86,6 +88,7 @@ public class MatchTimerService {
                 if (task != null) {
                     task.cancel(false);
                 }
+                EventoNegocio.de(log, "cronometro.agotado").con("matchId", matchId).info();
                 events.publishEvent(new TimeUpEvent(matchId, now));
             }
         } catch (RuntimeException e) {

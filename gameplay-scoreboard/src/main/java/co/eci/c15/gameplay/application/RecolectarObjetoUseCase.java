@@ -1,5 +1,6 @@
 package co.eci.c15.gameplay.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.gameplay.domain.ComponenteMapa;
 import co.eci.c15.gameplay.domain.InventarioEquipo;
 import co.eci.c15.gameplay.domain.InventarioRepository;
@@ -13,6 +14,8 @@ import co.eci.c15.gameplay.domain.ObjetoYaRecolectadoException;
 import co.eci.c15.gameplay.domain.Posicion;
 import co.eci.c15.gameplay.domain.TipoComponente;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Recoleccion de objetos del mapa e inventario compartido por equipo (HU-31.5). El jugador debe
@@ -21,6 +24,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class RecolectarObjetoUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(RecolectarObjetoUseCase.class);
 
     private final JugadorEnMapaRepository jugadores;
     private final ObtenerMapaUseCase obtenerMapa;
@@ -52,6 +57,8 @@ public class RecolectarObjetoUseCase {
             if (!inventario.agregar(new ObjetoInventario(componenteMapaId, nombreDe(componenteMapaId), userId))) {
                 throw new ObjetoYaRecolectadoException(componenteMapaId);
             }
+            EventoNegocio.de(log, "objeto.recolectado").con("matchId", matchId).con("equipoId", jugador.getEquipoId())
+                    .con("objeto", componenteMapaId).con("userId", userId).info();
             InventarioDto foto = InventarioDto.from(inventario);
             notifier.notificar(foto);
             return foto;

@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.EquipoRepository;
 import co.eci.c15.salas.domain.JugadorNoEnSalaException;
@@ -9,9 +10,13 @@ import co.eci.c15.salas.domain.SalaRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class UnirseEquipoUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(UnirseEquipoUseCase.class);
 
     private final EquipoRepository equipos;
     private final SalaRepository salas;
@@ -46,6 +51,8 @@ public class UnirseEquipoUseCase {
         }
         equipos.save(equipo);
         events.publishEvent(new SalaActualizadaEvent(sala.getId()));
+        EventoNegocio.de(log, "equipo.jugador_unido").con("salaId", sala.getId()).con("equipoId", equipoId)
+                .con("userId", userId).info();
         return EquipoDto.from(equipo);
     }
 }

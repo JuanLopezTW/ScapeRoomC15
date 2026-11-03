@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.common.events.PartidaIniciadaEvent;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.EquipoRepository;
@@ -8,6 +9,8 @@ import co.eci.c15.salas.domain.SalaRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -21,6 +24,8 @@ import java.util.Optional;
  */
 @Service
 public class IniciarPartidaUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(IniciarPartidaUseCase.class);
 
     private final SalaRepository salas;
     private final EquipoRepository equipos;
@@ -60,6 +65,8 @@ public class IniciarPartidaUseCase {
         String matchId = sala.getId();
         events.publishEvent(new PartidaIniciadaEvent(matchId, Collections.unmodifiableMap(jugadoresPorEquipo)));
         events.publishEvent(new SalaActualizadaEvent(salaId));
+        EventoNegocio.de(log, "partida.iniciada").con("matchId", matchId).con("equipos", jugadoresPorEquipo.size())
+                .con("jugadores", jugadoresPorEquipo.values().stream().mapToInt(List::size).sum()).info();
         return Optional.of(matchId);
     }
 }

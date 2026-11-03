@@ -1,9 +1,12 @@
 package co.eci.c15.auth.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.auth.domain.UsernameEnUsoException;
 import co.eci.c15.auth.domain.Usuario;
 import co.eci.c15.auth.domain.UsuarioRepository;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +17,8 @@ import java.util.Optional;
  */
 @Service
 public class PerfilUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(PerfilUseCase.class);
 
     private final UsuarioRepository usuarios;
 
@@ -33,6 +38,7 @@ public class PerfilUseCase {
             Usuario.validarUsername(username);
             if (usuarios.existsByUsername(username)) throw new UsernameEnUsoException(username);
             Usuario usuario = usuarios.save(Usuario.registrar(userId, username));
+            EventoNegocio.de(log, "perfil.registrado").con("userId", userId).info();
             return new PerfilDto(usuario.getId(), usuario.getUsername());
         });
     }

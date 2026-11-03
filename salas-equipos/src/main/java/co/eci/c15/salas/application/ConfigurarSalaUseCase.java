@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.salas.domain.ConfiguracionInvalidaException;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.EquipoRepository;
@@ -8,11 +9,15 @@ import co.eci.c15.salas.domain.SalaRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 @Service
 public class ConfigurarSalaUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(ConfigurarSalaUseCase.class);
 
     private final SalaRepository salas;
     private final EquipoRepository equipos;
@@ -54,6 +59,8 @@ public class ConfigurarSalaUseCase {
         }
 
         events.publishEvent(new SalaActualizadaEvent(sala.getId()));
+        EventoNegocio.de(log, "sala.configurada").con("salaId", salaId).con("numEquipos", numEquipos)
+                .con("jugadoresPorEquipo", jugadoresPorEquipo).info();
         return SalaDto.from(sala);
     }
 }

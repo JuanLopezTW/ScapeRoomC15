@@ -31,7 +31,7 @@ services:
       AUTH0_ISSUER: ${AUTH0_ISSUER:-https://escaperoomc15.us.auth0.com/}
       AUTH0_AUDIENCE: ${AUTH0_AUDIENCE:-https://api.escaperoomc15}
       # Logs legibles en la consola y copia a Grafana (http://localhost:3000)
-      SPRING_PROFILES_ACTIVE: local
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
       OTEL_ACTIVO: "true"
       OTEL_TRACES_URL: http://observabilidad:4318/v1/traces
       OTEL_LOGS_URL: http://observabilidad:4318/v1/logs

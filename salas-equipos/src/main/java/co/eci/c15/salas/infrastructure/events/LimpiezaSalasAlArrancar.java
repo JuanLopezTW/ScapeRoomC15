@@ -1,5 +1,6 @@
 package co.eci.c15.salas.infrastructure.events;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.salas.application.FinalizarPartidaUseCase;
 import co.eci.c15.salas.domain.Sala;
 import co.eci.c15.salas.domain.SalaRepository;
@@ -33,7 +34,10 @@ public class LimpiezaSalasAlArrancar {
     public void limpiar() {
         try {
             List<Sala> restantes = salas.findAll();
-            restantes.forEach(sala -> finalizar.ejecutar(sala.getId()));
+            restantes.forEach(sala -> {
+                finalizar.ejecutar(sala.getId());
+                EventoNegocio.de(log, "sala.cerrada").con("salaId", sala.getId()).con("motivo", "reinicio_servidor").info();
+            });
             if (!restantes.isEmpty()) log.info("Se borraron {} salas que quedaron del arranque anterior", restantes.size());
         } catch (RuntimeException e) {
             // Unas salas de mas no justifican tumbar el arranque de la aplicacion

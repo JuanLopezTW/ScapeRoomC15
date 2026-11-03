@@ -1,5 +1,6 @@
 package co.eci.c15.gameplay.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.common.events.AcertijoResueltoEvent;
 import co.eci.c15.gameplay.domain.AcertijoEnPartida;
 import co.eci.c15.gameplay.domain.AcertijoEnPartidaRepository;
@@ -13,6 +14,8 @@ import co.eci.c15.gameplay.domain.SolucionAcertijoRepository;
 import co.eci.c15.gameplay.domain.SolucionNoDisponibleException;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -24,6 +27,8 @@ import java.util.List;
  */
 @Service
 public class ValidarSolucionUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(ValidarSolucionUseCase.class);
 
     static final int MAX_PASOS = 100;
     static final int MAX_LONGITUD_PASO = 50;
@@ -58,8 +63,14 @@ public class ValidarSolucionUseCase {
         AcertijoEnPartida.Resultado resultado =
                 estado.intentarResolver(userId, respuesta, candidata -> ComparadorRespuestas.coincide(candidata, solucion));
 
-        if (resultado == AcertijoEnPartida.Resultado.INCORRECTA) return ResultadoSolucionDto.error();
+        if (resultado == AcertijoEnPartida.Resultado.INCORRECTA) {
+            EventoNegocio.de(log, "acertijo.intento_fallido").con("matchId", matchId).con("equipoId", jugador.getEquipoId())
+                    .con("acertijo", componenteMapaId).con("userId", userId).info();
+            return ResultadoSolucionDto.error();
+        }
         jugador.cerrarAcertijo(componenteMapaId);
+        EventoNegocio.de(log, "acertijo.resuelto").con("matchId", matchId).con("equipoId", jugador.getEquipoId())
+                .con("acertijo", componenteMapaId).con("userId", userId).info();
         events.publishEvent(new AcertijoResueltoEvent(matchId, jugador.getEquipoId(), componenteMapaId, userId));
         return ResultadoSolucionDto.acierto();
     }

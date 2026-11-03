@@ -1,5 +1,6 @@
 package co.eci.c15.gameplay.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.common.events.AcertijoResueltoEvent;
 import co.eci.c15.common.events.ChallengeFinishedEvent;
 import co.eci.c15.common.events.MatchFinishedEvent;
@@ -9,6 +10,8 @@ import co.eci.c15.gameplay.domain.ProgresoEquipo;
 import co.eci.c15.gameplay.domain.ProgresoRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -26,6 +29,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class MatchResultService {
+
+    private static final Logger log = LoggerFactory.getLogger(MatchResultService.class);
 
     private final ProgresoPartidaUseCase progress;
     private final ProgresoRepository progressRepository;
@@ -92,6 +97,8 @@ public class MatchResultService {
         results.put(matchId, result);
 
         notifier.notify(result);
+        EventoNegocio.de(log, "partida.terminada").con("matchId", matchId).con("motivo", reason)
+                .con("equipoGanadorId", result.winnerTeamId()).info();
         Map<String, Integer> scores = new LinkedHashMap<>();
         result.standings().forEach(t -> scores.put(t.teamId(), t.score()));
         events.publishEvent(new MatchFinishedEvent(matchId, reason.name(), result.winnerTeamId(), scores));

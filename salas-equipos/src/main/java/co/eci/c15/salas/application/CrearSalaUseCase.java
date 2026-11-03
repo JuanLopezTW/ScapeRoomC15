@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.EquipoRepository;
 import co.eci.c15.salas.domain.Sala;
@@ -7,9 +8,13 @@ import co.eci.c15.salas.domain.SalaRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class CrearSalaUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(CrearSalaUseCase.class);
 
     private final SalaRepository salas;
     private final EquipoRepository equipos;
@@ -29,6 +34,7 @@ public class CrearSalaUseCase {
             equipos.save(Equipo.crear(sala.getId(), numero, sala.getJugadoresPorEquipo()));
         }
         events.publishEvent(new SalaCreadaEvent(sala.getId(), sala.getNombre()));
+        EventoNegocio.de(log, "sala.creada").con("salaId", sala.getId()).con("userId", anfitrionId).info();
         return SalaDto.from(sala);
     }
 }

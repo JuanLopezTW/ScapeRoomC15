@@ -1,5 +1,6 @@
 package co.eci.c15.estadisticas.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.common.events.MatchFinishedEvent;
 import co.eci.c15.estadisticas.domain.EstadisticaJugador;
 import co.eci.c15.estadisticas.domain.EstadisticasRepository;
@@ -8,6 +9,8 @@ import co.eci.c15.estadisticas.domain.ResultadoPartida;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -23,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 public class EstadisticasService {
+
+    private static final Logger log = LoggerFactory.getLogger(EstadisticasService.class);
 
     static final int MAX_RANKING = 50;
     static final int ULTIMAS_PARTIDAS = 5;
@@ -60,6 +65,8 @@ public class EstadisticasService {
                     partidas.add(new PartidaJugada(evento.matchId(), userId, equipoId, resultado, puntaje, ahora)));
         });
         repositorio.guardarTodas(partidas);
+        EventoNegocio.de(log, "estadisticas.partida_registrada").con("matchId", evento.matchId())
+                .con("jugadores", partidas.size()).info();
     }
 
     public List<JugadorRankingDto> ranking(int limite) {

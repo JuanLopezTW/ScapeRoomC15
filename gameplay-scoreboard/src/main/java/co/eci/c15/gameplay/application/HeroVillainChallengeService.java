@@ -1,5 +1,6 @@
 package co.eci.c15.gameplay.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.common.events.ChallengeFinishedEvent;
 import co.eci.c15.gameplay.domain.AsignacionRoles;
 import co.eci.c15.gameplay.domain.ChallengeNotActiveException;
@@ -111,6 +112,7 @@ public class HeroVillainChallengeService {
         HeroVillainChallenge challenge = new HeroVillainChallenge(matchId, rolesByTeam, endsAt);
         active.put(matchId, challenge);
         notifier.notify(state(challenge, ChallengeState.STARTED, null));
+        EventoNegocio.de(log, "reto.iniciado").con("matchId", matchId).con("segundos", challengeDuration.toSeconds()).info();
 
         List<ScheduledFuture<?>> tasks = new ArrayList<>();
         tasks.add(scheduler.scheduleAtFixedRate(() -> broadcast(matchId),
@@ -142,6 +144,8 @@ public class HeroVillainChallengeService {
         active.remove(matchId);
         Optional.ofNullable(runningTasks.remove(matchId)).ifPresent(tasks -> tasks.forEach(t -> t.cancel(false)));
         notifier.notify(new ChallengeState(matchId, ChallengeState.FINISHED, 0, result.scores(), result.winnerTeamId()));
+        EventoNegocio.de(log, "reto.terminado").con("matchId", matchId).con("equipoGanadorId", result.winnerTeamId())
+                .con("puntajes", result.scores()).info();
         events.publishEvent(new ChallengeFinishedEvent(matchId, result.winnerTeamId(), result.scores()));
         return Optional.of(result);
     }

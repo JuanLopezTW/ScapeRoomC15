@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.EquipoRepository;
 import co.eci.c15.salas.domain.JugadorSinEquipoException;
@@ -10,6 +11,8 @@ import co.eci.c15.salas.domain.SalaRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Estado listo de un jugador en su equipo (HU-63.4). Cada jugador marca o desmarca el suyo y
@@ -17,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class MarcarListoUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(MarcarListoUseCase.class);
 
     private final SalaRepository salas;
     private final EquipoRepository equipos;
@@ -52,6 +57,8 @@ public class MarcarListoUseCase {
             else equipo.desmarcarListo(userId);
             equipos.save(equipo);
             events.publishEvent(new SalaActualizadaEvent(salaId));
+            EventoNegocio.de(log, listo ? "jugador.listo" : "jugador.no_listo").con("salaId", salaId)
+                    .con("userId", userId).info();
         }
         return SalaDetalleDto.from(sala, equipos.findBySalaId(salaId));
     }

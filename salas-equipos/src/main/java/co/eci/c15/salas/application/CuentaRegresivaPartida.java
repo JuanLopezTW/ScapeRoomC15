@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -50,10 +51,12 @@ public class CuentaRegresivaPartida {
             propia.set(tarea);
             pendientes.put(salaId, tarea);
             notifier.cuentaRegresiva(salaId, espera.toSeconds());
+            EventoNegocio.de(log, "partida.cuenta_regresiva").con("salaId", salaId).con("segundos", espera.toSeconds()).info();
         } else if (!lista && enCurso != null) {
             enCurso.cancel(false);
             pendientes.remove(salaId);
             notifier.cancelada(salaId);
+            EventoNegocio.de(log, "partida.cuenta_cancelada").con("salaId", salaId).info();
         }
     }
 

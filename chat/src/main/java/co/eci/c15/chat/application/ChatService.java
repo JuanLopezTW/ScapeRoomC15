@@ -1,12 +1,16 @@
 package co.eci.c15.chat.application;
 
+import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.chat.domain.CanalChat;
 import co.eci.c15.chat.domain.ChatNoDisponibleException;
 import co.eci.c15.chat.domain.ChatRepository;
+import co.eci.c15.chat.domain.DemasiadosMensajesException;
 import co.eci.c15.chat.domain.JugadorFueraDeSalaException;
 import co.eci.c15.chat.domain.MensajeChat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -26,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 public class ChatService {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatService.class);
 
     static final Duration CADUCIDAD_GLOBAL = Duration.ofHours(1);
 
@@ -119,10 +125,16 @@ public class ChatService {
     }
 
     private MensajeChatDto publicar(MensajeChat mensaje) {
-        limite.registrar(mensaje.userId(), mensaje.enviadoEn());
+        try {
+            limite.registrar(mensaje.userId(), mensaje.enviadoEn());
+        } catch (DemasiadosMensajesException e) {
+            EventoNegocio.de(log, "chat.limite_excedido").con("canal", mensaje.canal()).con("userId", mensaje.userId()).warn();
+            throw e;
+        }
         mensajes.guardar(mensaje);
         MensajeChatDto dto = MensajeChatDto.from(mensaje);
         notifier.mensajeNuevo(dto);
+        EventoNegocio.de(log, "chat.mensaje_enviado").con("canal", mensaje.canal()).con("userId", mensaje.userId()).info();
         return dto;
     }
 
