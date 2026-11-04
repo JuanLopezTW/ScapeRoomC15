@@ -42,14 +42,13 @@ public class BarrenderoSalas {
     private final StringRedisTemplate redis;
     private final TaskScheduler scheduler;
     private final Duration intervalo;
-    private final Duration vidaPartida;
+    private final Duration margen;
     private final String instancia = UUID.randomUUID().toString();
 
     @SuppressWarnings("java:S107") // salas, presencia, Redis, reloj y los tiempos del barrido
     public BarrenderoSalas(SalaRepository salas, FinalizarPartidaUseCase finalizar, PresenciaSala presencia,
                            StringRedisTemplate redis, @Qualifier("salasScheduler") TaskScheduler scheduler,
                            @Value("${c15.salas.barrido:60s}") Duration intervalo,
-                           @Value("${c15.partida.duracion:30m}") Duration duracion,
                            @Value("${c15.estado.margen:10m}") Duration margen) {
         this.salas = salas;
         this.finalizar = finalizar;
@@ -57,7 +56,7 @@ public class BarrenderoSalas {
         this.redis = redis;
         this.scheduler = scheduler;
         this.intervalo = intervalo;
-        this.vidaPartida = duracion.plus(margen);
+        this.margen = margen;
     }
 
     static String enPartida(String salaId) {
@@ -76,7 +75,7 @@ public class BarrenderoSalas {
     /** La sala tiene partida viva mientras dure la partida (mas el margen). */
     @EventListener
     public void onPartidaIniciada(PartidaIniciadaEvent evento) {
-        redis.opsForValue().set(enPartida(evento.matchId()), instancia, vidaPartida);
+        redis.opsForValue().set(enPartida(evento.matchId()), instancia, evento.duracion().plus(margen));
     }
 
     void barrer() {

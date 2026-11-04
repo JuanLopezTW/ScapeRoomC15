@@ -1,6 +1,6 @@
 package co.eci.c15.gameplay.infrastructure.events;
 
-import co.eci.c15.common.events.AcertijoResueltoEvent;
+import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
 import co.eci.c15.common.events.PartidaIniciadaEvent;
 import co.eci.c15.gameplay.application.ProgresoPartidaUseCase;
 import org.springframework.context.event.EventListener;

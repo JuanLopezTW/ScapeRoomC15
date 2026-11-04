@@ -44,9 +44,7 @@ class EstadisticasServiceTest {
 
     @Test
     void elEquipoGanadorSumaVictoriaYElRestoDerrota() {
-        estadisticas.partidaIniciada("m1", EQUIPOS);
-
-        estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 2, "e2", 1)));
+        estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 2, "e2", 1), EQUIPOS));
 
         assertEquals(Map.of("ana", ResultadoPartida.VICTORIA, "beto", ResultadoPartida.VICTORIA,
                 "caro", ResultadoPartida.DERROTA), resultadosGuardados());
@@ -54,9 +52,9 @@ class EstadisticasServiceTest {
 
     @Test
     void sinGanadorEmpatanLosDelMejorPuntajeYElRestoPierde() {
-        estadisticas.partidaIniciada("m1", Map.of("e1", List.of("ana"), "e2", List.of("beto"), "e3", List.of("caro")));
+        Map<String, List<String>> tres = Map.of("e1", List.of("ana"), "e2", List.of("beto"), "e3", List.of("caro"));
 
-        estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", null, Map.of("e1", 2, "e2", 2, "e3", 1)));
+        estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", null, Map.of("e1", 2, "e2", 2, "e3", 1), tres));
 
         assertEquals(Map.of("ana", ResultadoPartida.EMPATE, "beto", ResultadoPartida.EMPATE,
                 "caro", ResultadoPartida.DERROTA), resultadosGuardados());
@@ -64,25 +62,34 @@ class EstadisticasServiceTest {
 
     @Test
     void guardaElPuntajeDelEquipoYLaFecha() {
-        estadisticas.partidaIniciada("m1", Map.of("e1", List.of("ana")));
-
-        estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 3)));
+        estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 3),
+                Map.of("e1", List.of("ana"))));
 
         verify(repositorio).guardarTodas(List.of(
                 new PartidaJugada("m1", "ana", "e1", ResultadoPartida.VICTORIA, 3, AHORA)));
     }
 
     @Test
-    void unaPartidaQueNoVioIniciarSeIgnora() {
-        assertFalse(estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1))));
+    void otraInstanciaQueNoVioIniciarLaPartidaIgualLaRegistra() {
+        EstadisticasService otra = new EstadisticasService(repositorio, Clock.fixed(AHORA, ZoneOffset.UTC));
+
+        assertTrue(otra.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1, "e2", 0), EQUIPOS)));
+
+        assertEquals(3, resultadosGuardados().size());
+    }
+
+    @Test
+    void unaPartidaSinEquiposSeIgnora() {
+        assertFalse(estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1), Map.of())));
+        assertFalse(estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1), null)));
 
         verify(repositorio, never()).guardarTodas(any());
     }
 
     @Test
     void siElEventoLlegaDosVecesSoloCuentaUna() {
-        estadisticas.partidaIniciada("m1", EQUIPOS);
-        MatchFinishedEvent fin = new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1, "e2", 0));
+        MatchFinishedEvent fin = new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1, "e2", 0), EQUIPOS);
+        when(repositorio.existePartida("m1")).thenReturn(false, true);
 
         assertTrue(estadisticas.partidaTerminada(fin));
         assertFalse(estadisticas.partidaTerminada(fin));
@@ -93,9 +100,8 @@ class EstadisticasServiceTest {
     @Test
     void unaPartidaYaGuardadaNoSeRepite() {
         when(repositorio.existePartida("m1")).thenReturn(true);
-        estadisticas.partidaIniciada("m1", EQUIPOS);
 
-        assertFalse(estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1))));
+        assertFalse(estadisticas.partidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1), EQUIPOS)));
 
         verify(repositorio, never()).guardarTodas(any());
     }

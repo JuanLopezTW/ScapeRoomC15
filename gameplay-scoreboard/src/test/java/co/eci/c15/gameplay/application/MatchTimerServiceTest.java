@@ -1,6 +1,6 @@
 package co.eci.c15.gameplay.application;
 
-import co.eci.c15.common.events.TimeUpEvent;
+import co.eci.c15.gameplay.domain.events.TimeUpEvent;
 import co.eci.c15.gameplay.infrastructure.estado.TiempoPartidaEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

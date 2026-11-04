@@ -15,9 +15,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -170,17 +172,17 @@ public class TiempoPartidaEnMemoria {
     }
 
     static class Resultados implements ResultadosPartida {
-        private final Map<String, List<String>> equipos = new ConcurrentHashMap<>();
+        private final Map<String, Map<String, List<String>>> equipos = new ConcurrentHashMap<>();
         private final Map<String, Map<String, Integer>> retosGanados = new ConcurrentHashMap<>();
         private final Map<String, MatchResult> resultados = new ConcurrentHashMap<>();
 
         @Override
-        public void guardarEquipos(String matchId, List<String> equiposDePartida) {
-            equipos.putIfAbsent(matchId, List.copyOf(equiposDePartida));
+        public void guardarEquipos(String matchId, Map<String, List<String>> equiposDePartida) {
+            equipos.putIfAbsent(matchId, Collections.unmodifiableMap(new TreeMap<>(equiposDePartida)));
         }
 
         @Override
-        public Optional<List<String>> equipos(String matchId) {
+        public Optional<Map<String, List<String>>> equipos(String matchId) {
             return Optional.ofNullable(equipos.get(matchId));
         }
 

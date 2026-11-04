@@ -1,5 +1,6 @@
 package co.eci.c15.app;
 
+import co.eci.c15.app.integracion.EventosEntreServiciosAsincronos;
 import co.eci.c15.salas.application.CuentaRegresivaPartida;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,7 +20,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -28,6 +31,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 class PartidaInicioFlujoTest {
+
+    @Autowired
+    private EventosEntreServiciosAsincronos entreServicios;
 
     @Autowired
     private MockMvc mvc;
@@ -46,10 +52,11 @@ class PartidaInicioFlujoTest {
 
         await().atMost(Duration.ofSeconds(10)).untilAsserted(() ->
                 mvc.perform(get("/api/salas/{id}", salaId)).andExpect(status().isConflict()));
+        await().atMost(Duration.ofSeconds(10)).until(entreServicios::entregados);
 
         mvc.perform(get("/api/partidas/{id}/cronometro", salaId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.segundosRestantes", greaterThan(1700)));
+                .andExpect(jsonPath("$.segundosRestantes", allOf(greaterThan(590), lessThanOrEqualTo(600))));
         mvc.perform(get("/api/partidas/{id}/jugadores/{u}/rol", salaId, "ana"))
                 .andExpect(status().isOk());
         mvc.perform(post("/api/salas/{id}/listo", salaId).contentType(MediaType.APPLICATION_JSON)
@@ -77,9 +84,9 @@ class PartidaInicioFlujoTest {
 
     @Test
     void unJugadorSinEquipoImpideElArranque() throws Exception {
-        String salaId = salaConDosEquipos("Sala con suelto");
-        unirseASala(salaId, "eli");
-        for (String u : new String[]{"ana", "beto", "caro", "dani"}) marcarListo(salaId, u);
+        String salaId = salaConEquipos("Sala con suelto", new String[][]{{"ana", "beto"}, {"caro"}});
+        unirseASala(salaId, "dani");
+        for (String u : new String[]{"ana", "beto", "caro"}) marcarListo(salaId, u);
 
         // La evaluacion es asincrona: comprobar que no arranca durante un rato
         await().during(Duration.ofMillis(800)).atMost(Duration.ofSeconds(3))
@@ -118,15 +125,18 @@ class PartidaInicioFlujoTest {
         }
     }
 
-    /** Sala con dos equipos: ana y beto en el 1, caro y dani en el 2. */
+    /** Sala de 10 minutos con dos equipos: ana y beto en el 1, caro y dani en el 2. */
     private String salaConDosEquipos(String nombre) throws Exception {
+        return salaConEquipos(nombre, new String[][]{{"ana", "beto"}, {"caro", "dani"}});
+    }
+
+    private String salaConEquipos(String nombre, String[][] reparto) throws Exception {
         String salaId = leer(mvc.perform(post("/api/salas").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nombre\":\"" + nombre + "\",\"anfitrionId\":\"ana\"}"))
+                        .content("{\"nombre\":\"" + nombre + "\",\"minutos\":10}"))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString()).get("id").asText();
         JsonNode equipos = leer(mvc.perform(get("/api/salas/{id}/equipos", salaId))
                 .andReturn().getResponse().getContentAsString());
-        String[][] reparto = {{"ana", "beto"}, {"caro", "dani"}};
         for (int i = 0; i < reparto.length; i++) {
             for (String u : reparto[i]) {
                 unirseASala(salaId, u);

@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.events.EventosEntreServicios;
 import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.common.events.SalaCerradaEvent;
 import co.eci.c15.salas.domain.Equipo;
@@ -30,13 +31,15 @@ public class SalirDeSalaUseCase {
     private final EquipoRepository equipos;
     private final ArranquePartidaNotifier notifier;
     private final ApplicationEventPublisher events;
+    private final EventosEntreServicios entreServicios;
 
-    public SalirDeSalaUseCase(SalaRepository salas, EquipoRepository equipos,
-                              ArranquePartidaNotifier notifier, ApplicationEventPublisher events) {
+    public SalirDeSalaUseCase(SalaRepository salas, EquipoRepository equipos, ArranquePartidaNotifier notifier,
+                              ApplicationEventPublisher events, EventosEntreServicios entreServicios) {
         this.salas = salas;
         this.equipos = equipos;
         this.notifier = notifier;
         this.events = events;
+        this.entreServicios = entreServicios;
     }
 
     public boolean esAnfitrion(String salaId, String userId) {
@@ -55,7 +58,7 @@ public class SalirDeSalaUseCase {
             salas.delete(salaId);
             notifier.cerrada(salaId);
             events.publishEvent(new SalaActualizadaEvent(salaId));
-            events.publishEvent(new SalaCerradaEvent(salaId));
+            entreServicios.publicar(new SalaCerradaEvent(salaId));
             EventoNegocio.de(log, "sala.cerrada").con("salaId", salaId).con("motivo", "anfitrion_salio").info();
             return Resultado.SALA_CERRADA;
         }

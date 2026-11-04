@@ -1,6 +1,6 @@
 package co.eci.c15.gameplay.application;
 
-import co.eci.c15.common.events.ChallengeFinishedEvent;
+import co.eci.c15.gameplay.domain.events.ChallengeFinishedEvent;
 import co.eci.c15.gameplay.domain.AsignacionRoles;
 import co.eci.c15.gameplay.domain.ChallengeNotActiveException;
 import co.eci.c15.gameplay.domain.ChallengeResult;
@@ -26,6 +26,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class HeroVillainChallengeServiceTest {
+
+    private static final Duration PARTIDA = Duration.ofMinutes(30);
 
     private static final Instant NOW = Instant.parse("2026-10-09T12:00:00Z");
     /** Con el azar en 0 el reto cae al 30% de 30 min. */
@@ -53,7 +55,7 @@ class HeroVillainChallengeServiceTest {
             @Override public long nextLong(long bound) { return 0; }
         };
         service = new HeroVillainChallengeService(retos, mias::contains, clock, roles, notifier,
-                events, lowest, Duration.ofMinutes(30), Duration.ofSeconds(20));
+                events, lowest, Duration.ofSeconds(20));
         roles.saveIfAbsent(new AsignacionRoles("m1", "A", Map.of("ana", Rol.HEROE, "beto", Rol.VERDUGO)));
         roles.saveIfAbsent(new AsignacionRoles("m1", "B", Map.of("caro", Rol.HEROE, "dani", Rol.VERDUGO)));
     }
@@ -66,8 +68,8 @@ class HeroVillainChallengeServiceTest {
 
     @Test
     void scheduleProgramsTheChallengeInsideTheWindowOnlyOnce() {
-        service.schedule("m1", List.of("B", "A"));
-        service.schedule("m1", List.of("A", "B", "C"));
+        service.schedule("m1", List.of("B", "A"), PARTIDA);
+        service.schedule("m1", List.of("A", "B", "C"), PARTIDA);
 
         RetosPartida.Plan plan = retos.plan("m1").orElseThrow();
         assertEquals(NOW.plus(A_LOS_9_MIN), plan.inicio());
@@ -77,7 +79,7 @@ class HeroVillainChallengeServiceTest {
 
     @Test
     void beforeItsMomentTheTickDoesNotStartIt() {
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         clock.advance(A_LOS_9_MIN.minusSeconds(1));
 
         service.tickTodos();
@@ -88,7 +90,7 @@ class HeroVillainChallengeServiceTest {
 
     @Test
     void whenTheMomentArrivesTheChallengeStarts() {
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         clock.advance(A_LOS_9_MIN);
 
         service.tickTodos();
@@ -102,7 +104,7 @@ class HeroVillainChallengeServiceTest {
 
     @Test
     void whileRunningTheTickBroadcastsAndWhenTimeIsUpItCloses() {
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         service.start("m1");
         service.click("m1", "ana");
         clock.advance(Duration.ofSeconds(5));
@@ -124,7 +126,7 @@ class HeroVillainChallengeServiceTest {
     @Test
     void onlyTheMatchesThisInstanceOwnsAreTicked() {
         mias.remove("m1");
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         clock.advance(A_LOS_9_MIN);
 
         service.tickTodos();
@@ -134,7 +136,7 @@ class HeroVillainChallengeServiceTest {
 
     @Test
     void clicksGoToTheRunningChallenge() {
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         service.start("m1");
 
         service.click("m1", "ana");
@@ -146,13 +148,13 @@ class HeroVillainChallengeServiceTest {
     @Test
     void clickWithoutChallengeIsRejected() {
         assertThrows(ChallengeNotActiveException.class, () -> service.click("m1", "ana"));
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         assertThrows(ChallengeNotActiveException.class, () -> service.click("m1", "ana"), "programado aun no cuenta");
     }
 
     @Test
     void finishPublishesTheWinnerAndUnfreezesTheMap() {
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         service.start("m1");
         service.click("m1", "caro");
 
@@ -169,7 +171,7 @@ class HeroVillainChallengeServiceTest {
 
     @Test
     void aTiePublishesNoWinner() {
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         service.start("m1");
 
         service.finish("m1");
@@ -179,7 +181,7 @@ class HeroVillainChallengeServiceTest {
 
     @Test
     void onlyOneChallengePerMatch() {
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         assertTrue(service.start("m1"));
         service.finish("m1");
 
@@ -189,7 +191,7 @@ class HeroVillainChallengeServiceTest {
 
     @Test
     void startingEarlyMeansTheScheduledMomentDoesNothing() {
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         service.start("m1");
         service.finish("m1");
         clock.advance(A_LOS_9_MIN);
@@ -207,7 +209,7 @@ class HeroVillainChallengeServiceTest {
 
     @Test
     void withoutRolesForTwoTeamsThereIsNoChallenge() {
-        service.schedule("m2", List.of("X", "Y"));
+        service.schedule("m2", List.of("X", "Y"), PARTIDA);
         assertFalse(service.start("m2"));
         assertFalse(service.isActive("m2"));
         verifyNoInteractions(notifier);
@@ -216,12 +218,12 @@ class HeroVillainChallengeServiceTest {
 
     @Test
     void whenTheMatchEndsTheChallengeIsDroppedOrClosed() {
-        service.schedule("m1", List.of("A", "B"));
+        service.schedule("m1", List.of("A", "B"), PARTIDA);
         service.matchOver("m1");
         assertFalse(service.start("m1"));
         verify(events, never()).publishEvent(any());
 
-        service.schedule("m3", List.of("A", "B"));
+        service.schedule("m3", List.of("A", "B"), PARTIDA);
         roles.saveIfAbsent(new AsignacionRoles("m3", "A", Map.of("ana", Rol.HEROE)));
         roles.saveIfAbsent(new AsignacionRoles("m3", "B", Map.of("caro", Rol.HEROE)));
         service.start("m3");
@@ -235,7 +237,7 @@ class HeroVillainChallengeServiceTest {
         RetosPartida roto = mock(RetosPartida.class);
         when(roto.activos()).thenThrow(new IllegalStateException("sin Redis"));
         HeroVillainChallengeService conError = new HeroVillainChallengeService(roto, m -> true, clock, roles,
-                notifier, events, RandomGenerator.getDefault(), Duration.ofMinutes(30), Duration.ofSeconds(20));
+                notifier, events, RandomGenerator.getDefault(), Duration.ofSeconds(20));
         assertDoesNotThrow(conError::tickTodos);
 
         doReturn(List.of("m1")).when(roto).activos();

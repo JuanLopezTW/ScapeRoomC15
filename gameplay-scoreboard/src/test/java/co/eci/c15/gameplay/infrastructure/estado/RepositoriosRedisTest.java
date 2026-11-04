@@ -50,7 +50,7 @@ class RepositoriosRedisTest extends RedisDePrueba {
         assertEquals("acertijo-1", otraVez.getAcertijoAbierto().orElseThrow());
         assertEquals(1, jugadores.findByMatchId("m1").size());
         long vida = segundosDeVida(EstadoPartidaRedis.clave("m1", "jugadores"));
-        assertTrue(vida > 850 && vida <= 900, "caduca en " + vida);
+        assertTrue(vida > 1450 && vida <= 1500, "caduca en " + vida);
     }
 
     @Test
@@ -161,7 +161,7 @@ class RepositoriosRedisTest extends RedisDePrueba {
         assertEquals(generado.getAncho(), deB.getAncho());
         assertTrue(instanciaB.tieneCopia("m1"));
         long vida = segundosDeVida(EstadoPartidaRedis.clave("m1", "mapa"));
-        assertTrue(vida > 850 && vida <= 900, "caduca en " + vida);
+        assertTrue(vida > 1450 && vida <= 1500, "caduca en " + vida);
     }
 
     @Test

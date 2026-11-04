@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.events.EventosEntreServicios;
 import co.eci.c15.common.events.SalaCerradaEvent;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.Sala;
@@ -19,6 +20,7 @@ class FinalizarPartidaUseCaseTest {
     private EquiposEnMemoria equipos;
     private SalaRepository salas;
     private ApplicationEventPublisher events;
+    private EventosEntreServicios entreServicios;
     private FinalizarPartidaUseCase useCase;
     private Sala sala;
 
@@ -27,7 +29,8 @@ class FinalizarPartidaUseCaseTest {
         equipos = new EquiposEnMemoria();
         salas = mock(SalaRepository.class);
         events = mock(ApplicationEventPublisher.class);
-        useCase = new FinalizarPartidaUseCase(salas, equipos, events);
+        entreServicios = mock(EventosEntreServicios.class);
+        useCase = new FinalizarPartidaUseCase(salas, equipos, events, entreServicios);
         sala = Sala.crear("Sala", "host");
         sala.iniciarPartida();
         when(salas.findById(sala.getId())).thenReturn(Optional.of(sala));
@@ -46,7 +49,7 @@ class FinalizarPartidaUseCaseTest {
         assertTrue(equipos.findBySalaId(sala.getId()).isEmpty());
         assertTrue(equipos.findById(deOtraSala.getId()).isPresent());
         verify(events).publishEvent(new SalaActualizadaEvent(sala.getId()));
-        verify(events).publishEvent(new SalaCerradaEvent(sala.getId()));
+        verify(entreServicios).publicar(new SalaCerradaEvent(sala.getId()));
     }
 
     @Test
@@ -54,6 +57,6 @@ class FinalizarPartidaUseCaseTest {
         assertFalse(useCase.ejecutar("no-existe"));
 
         verify(salas, never()).delete(any());
-        verifyNoInteractions(events);
+        verifyNoInteractions(events, entreServicios);
     }
 }

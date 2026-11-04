@@ -1,4 +1,4 @@
-package co.eci.c15.common.events;
+package co.eci.c15.gameplay.domain.events;
 
 import java.util.Map;
 

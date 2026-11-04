@@ -29,7 +29,7 @@ class SalaDetalleStompListenerTest {
 
     @Test
     void publicaElDetalleEnElTopicDeLaSala() {
-        SalaDetalleDto detalle = new SalaDetalleDto("s1", "Sala", "host", "DISPONIBLE", 2, 4, 8,
+        SalaDetalleDto detalle = new SalaDetalleDto("s1", "Sala", "host", "DISPONIBLE", 2, 2, 4, 5,
                 List.of("host"), List.of("host"), List.of());
         when(verSala.buscarAbierta("s1")).thenReturn(Optional.of(detalle));
 

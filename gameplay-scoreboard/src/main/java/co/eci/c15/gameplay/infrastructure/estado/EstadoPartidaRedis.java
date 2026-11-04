@@ -1,5 +1,6 @@
 package co.eci.c15.gameplay.infrastructure.estado;
 
+import co.eci.c15.common.events.PartidaIniciadaEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +17,7 @@ import java.util.Optional;
 
 /**
  * Estado vivo de una partida en Redis: un hash por tipo de dato bajo {@code c15:partida:{matchId}:...}, con
- * cada valor en JSON. Toda escritura renueva la caducidad (duracion de la partida + margen), asi que nada
+ * cada valor en JSON. Toda escritura renueva la caducidad (duracion maxima de una partida + margen), asi que nada
  * queda para siempre aunque una instancia muera a mitad de partida.
  */
 @Component
@@ -49,11 +50,10 @@ public class EstadoPartidaRedis {
     private final Duration vida;
 
     public EstadoPartidaRedis(StringRedisTemplate redis, ObjectMapper json,
-                              @Value("${c15.partida.duracion:30m}") Duration duracion,
                               @Value("${c15.estado.margen:10m}") Duration margen) {
         this.redis = redis;
         this.json = json;
-        this.vida = duracion.plus(margen);
+        this.vida = PartidaIniciadaEvent.DURACION_MAXIMA.plus(margen);
     }
 
     static String clave(String matchId, String parte) {

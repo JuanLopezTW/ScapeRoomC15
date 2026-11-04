@@ -30,7 +30,6 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      PARTIDA_DURACION: ${PARTIDA_DURACION}
       RETO_DURACION: ${RETO_DURACION}
       AUTH0_ISSUER: ${AUTH0_ISSUER:-https://escaperoomc15.us.auth0.com/}
       AUTH0_AUDIENCE: ${AUTH0_AUDIENCE:-https://api.escaperoomc15}

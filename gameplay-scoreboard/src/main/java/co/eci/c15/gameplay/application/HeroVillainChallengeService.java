@@ -1,7 +1,7 @@
 package co.eci.c15.gameplay.application;
 
 import co.eci.c15.common.logging.EventoNegocio;
-import co.eci.c15.common.events.ChallengeFinishedEvent;
+import co.eci.c15.gameplay.domain.events.ChallengeFinishedEvent;
 import co.eci.c15.gameplay.domain.AsignacionRoles;
 import co.eci.c15.gameplay.domain.ChallengeResult;
 import co.eci.c15.gameplay.domain.ChallengeTiming;
@@ -48,10 +48,9 @@ public class HeroVillainChallengeService {
     private final ChallengeNotifier notifier;
     private final ApplicationEventPublisher events;
     private final RandomGenerator random;
-    private final Duration matchDuration;
     private final Duration challengeDuration;
 
-    @SuppressWarnings("java:S107") // dependencias de la HU: estado, reloj, roles, avisos, azar y duraciones
+    @SuppressWarnings("java:S107") // dependencias de la HU: estado, reloj, roles, avisos, azar y duracion
     public HeroVillainChallengeService(RetosPartida retos,
                                        DuenoPartidas duenos,
                                        Clock clock,
@@ -59,7 +58,6 @@ public class HeroVillainChallengeService {
                                        ChallengeNotifier notifier,
                                        ApplicationEventPublisher events,
                                        @Qualifier("challengeRandom") RandomGenerator random,
-                                       @Value("${c15.partida.duracion:30m}") Duration matchDuration,
                                        @Value("${c15.reto.duracion:20s}") Duration challengeDuration) {
         this.retos = retos;
         this.duenos = duenos;
@@ -68,12 +66,11 @@ public class HeroVillainChallengeService {
         this.notifier = notifier;
         this.events = events;
         this.random = random;
-        this.matchDuration = matchDuration;
         this.challengeDuration = challengeDuration;
     }
 
-    /** Programs the match's only challenge at a random moment of the 30%-70% window. */
-    public void schedule(String matchId, Collection<String> teamIds) {
+    /** Programs the match's only challenge at a random moment of the 30%-70% window of its duration. */
+    public void schedule(String matchId, Collection<String> teamIds, Duration matchDuration) {
         Instant at = clock.instant().plus(ChallengeTiming.randomStart(matchDuration, random));
         retos.programar(matchId, teamIds.stream().sorted().toList(), at);
     }

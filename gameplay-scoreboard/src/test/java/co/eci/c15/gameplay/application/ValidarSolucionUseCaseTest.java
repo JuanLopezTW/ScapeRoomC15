@@ -1,6 +1,6 @@
 package co.eci.c15.gameplay.application;
 
-import co.eci.c15.common.events.AcertijoResueltoEvent;
+import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
 import co.eci.c15.gameplay.domain.Acertijo;
 import co.eci.c15.gameplay.domain.AcertijoBloqueadoException;
 import co.eci.c15.gameplay.domain.AcertijoNoAbiertoException;

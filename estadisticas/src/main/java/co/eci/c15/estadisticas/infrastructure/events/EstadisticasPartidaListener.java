@@ -1,7 +1,6 @@
 package co.eci.c15.estadisticas.infrastructure.events;
 
 import co.eci.c15.common.events.MatchFinishedEvent;
-import co.eci.c15.common.events.PartidaIniciadaEvent;
 import co.eci.c15.estadisticas.application.EstadisticasService;
 import co.eci.c15.estadisticas.application.RankingNotifier;
 import org.slf4j.Logger;
@@ -21,11 +20,6 @@ public class EstadisticasPartidaListener {
     public EstadisticasPartidaListener(EstadisticasService estadisticas, RankingNotifier notifier) {
         this.estadisticas = estadisticas;
         this.notifier = notifier;
-    }
-
-    @EventListener
-    public void onPartidaIniciada(PartidaIniciadaEvent event) {
-        estadisticas.partidaIniciada(event.matchId(), event.equipos());
     }
 
     /** Se avisa despues de guardar (la transaccion ya hizo commit), asi quien recargue ya ve la partida. */

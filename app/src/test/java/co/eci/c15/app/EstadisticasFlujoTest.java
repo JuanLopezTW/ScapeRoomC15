@@ -1,7 +1,6 @@
 package co.eci.c15.app;
 
 import co.eci.c15.common.events.MatchFinishedEvent;
-import co.eci.c15.common.events.PartidaIniciadaEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,9 +28,8 @@ class EstadisticasFlujoTest {
 
     @Test
     void unaPartidaTerminadaSumaAlRankingYALasEstadisticas() throws Exception {
-        eventos.publishEvent(new PartidaIniciadaEvent("stats-m1",
+        eventos.publishEvent(new MatchFinishedEvent("stats-m1", "TIME_UP", "stats-e1", Map.of("stats-e1", 2, "stats-e2", 1),
                 Map.of("stats-e1", List.of("stats-ana"), "stats-e2", List.of("stats-beto"))));
-        eventos.publishEvent(new MatchFinishedEvent("stats-m1", "TIME_UP", "stats-e1", Map.of("stats-e1", 2, "stats-e2", 1)));
 
         mvc.perform(get("/api/estadisticas/jugadores/stats-ana"))
                 .andExpect(status().isOk())

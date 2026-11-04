@@ -1,16 +1,15 @@
 package co.eci.c15.gameplay.infrastructure.events;
 
-import co.eci.c15.common.events.AcertijoResueltoEvent;
-import co.eci.c15.common.events.ChallengeFinishedEvent;
+import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
+import co.eci.c15.gameplay.domain.events.ChallengeFinishedEvent;
 import co.eci.c15.common.events.PartidaIniciadaEvent;
-import co.eci.c15.common.events.TimeUpEvent;
+import co.eci.c15.gameplay.domain.events.TimeUpEvent;
 import co.eci.c15.gameplay.application.MatchResultService;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.mockito.Mockito.*;
 
@@ -21,8 +20,9 @@ class MatchResultListenerTest {
 
     @Test
     void forwardsTheMatchEvents() {
-        listener.onPartidaIniciada(new PartidaIniciadaEvent("m1", Map.of("A", List.of("ana"), "B", List.of("caro"))));
-        verify(service).matchStarted("m1", Set.of("A", "B"));
+        Map<String, List<String>> equipos = Map.of("A", List.of("ana"), "B", List.of("caro"));
+        listener.onPartidaIniciada(new PartidaIniciadaEvent("m1", equipos));
+        verify(service).matchStarted("m1", equipos);
 
         ChallengeFinishedEvent challenge = new ChallengeFinishedEvent("m1", "A", Map.of("A", 1L, "B", 0L));
         listener.onChallengeFinished(challenge);

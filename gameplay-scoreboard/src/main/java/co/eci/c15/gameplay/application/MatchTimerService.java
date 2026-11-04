@@ -1,7 +1,7 @@
 package co.eci.c15.gameplay.application;
 
 import co.eci.c15.common.logging.EventoNegocio;
-import co.eci.c15.common.events.TimeUpEvent;
+import co.eci.c15.gameplay.domain.events.TimeUpEvent;
 import co.eci.c15.gameplay.domain.MatchTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

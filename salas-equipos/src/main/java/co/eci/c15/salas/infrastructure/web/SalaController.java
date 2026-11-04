@@ -68,10 +68,13 @@ public class SalaController {
     }
 
     @PostMapping
-    public ResponseEntity<?> crear(@RequestBody Map<String, String> body, Principal yo) {
+    public ResponseEntity<?> crear(@RequestBody Map<String, Object> body, Principal yo) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(crear.ejecutar(body.get("nombre"), yo.getName()));
-        } catch (IllegalArgumentException e) {
+            Object nombre = body.get("nombre");
+            Integer minutos = body.get("minutos") == null ? null : entero(body, "minutos");
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(crear.ejecutar(nombre == null ? null : nombre.toString(), yo.getName(), minutos));
+        } catch (ConfiguracionInvalidaException | IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }

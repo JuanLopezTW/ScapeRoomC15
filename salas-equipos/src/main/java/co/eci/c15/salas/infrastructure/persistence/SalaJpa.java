@@ -22,6 +22,8 @@ class SalaJpa {
     private int numEquipos;
     @Column(nullable = false)
     private int jugadoresPorEquipo;
+    /** Nullable: las salas guardadas antes de que existiera la columna usan la duracion por defecto. */
+    private Integer duracionMinutos;
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "sala_jugadores", joinColumns = @JoinColumn(name = "sala_id"))
     @Column(name = "user_id", nullable = false)
@@ -30,13 +32,14 @@ class SalaJpa {
     protected SalaJpa() {}
 
     SalaJpa(String id, String nombre, String anfitrionId, Sala.Estado estado,
-            int numEquipos, int jugadoresPorEquipo, Set<String> jugadores) {
+            int numEquipos, int jugadoresPorEquipo, int duracionMinutos, Set<String> jugadores) {
         this.id = id;
         this.nombre = nombre;
         this.anfitrionId = anfitrionId;
         this.estado = estado;
         this.numEquipos = numEquipos;
         this.jugadoresPorEquipo = jugadoresPorEquipo;
+        this.duracionMinutos = duracionMinutos;
         this.jugadores = new HashSet<>(jugadores);
     }
 
@@ -46,5 +49,6 @@ class SalaJpa {
     Sala.Estado getEstado() { return estado; }
     int getNumEquipos() { return numEquipos; }
     int getJugadoresPorEquipo() { return jugadoresPorEquipo; }
+    Integer getDuracionMinutos() { return duracionMinutos; }
     Set<String> getJugadores() { return jugadores; }
 }

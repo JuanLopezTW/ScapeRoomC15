@@ -24,7 +24,7 @@ class SalaCreadaStompListenerTest {
         messaging = mock(SimpMessagingTemplate.class);
         listar = mock(ListarSalasUseCase.class);
         listener = new SalaCreadaStompListener(messaging, listar);
-        catalogo = List.of(new SalaDto("s1", "Sala", "host", "DISPONIBLE", 2, 4, 1, 8));
+        catalogo = List.of(new SalaDto("s1", "Sala", "host", "DISPONIBLE", 2, 2, 1, 4, 5));
         when(listar.ejecutar()).thenReturn(catalogo);
     }
 

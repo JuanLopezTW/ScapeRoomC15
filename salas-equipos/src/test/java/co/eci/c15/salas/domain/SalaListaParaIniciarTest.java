@@ -16,8 +16,8 @@ class SalaListaParaIniciarTest {
 
     @BeforeEach
     void setUp() {
-        sala = Sala.crear("Sala", "host");
-        sala.configurar("host", 3, 4);
+        // La regla es general (sirve para salas guardadas antes del tope de 2 equipos de 2)
+        sala = Sala.reconstituir("s1", "Sala", "host", Sala.Estado.DISPONIBLE, 3, 4, 5, List.of());
         equipo1 = Equipo.crear(sala.getId(), 1, 4);
         equipo2 = Equipo.crear(sala.getId(), 2, 4);
         equipo3 = Equipo.crear(sala.getId(), 3, 4);
@@ -34,6 +34,24 @@ class SalaListaParaIniciarTest {
 
     private void todosListos(Equipo equipo) {
         equipo.getMiembros().forEach(equipo::marcarListo);
+    }
+
+    @Test
+    void unaSalaDeDosEquiposDeDosArrancaConLosCuatroListos() {
+        Sala nueva = Sala.crear("Nueva", "host");
+        Equipo a = Equipo.crear(nueva.getId(), 1, nueva.getJugadoresPorEquipo());
+        Equipo b = Equipo.crear(nueva.getId(), 2, nueva.getJugadoresPorEquipo());
+        for (String j : List.of("ana", "beto")) { nueva.unirJugador(j); a.unirMiembro(j); a.marcarListo(j); }
+        nueva.unirJugador("caro");
+        b.unirMiembro("caro");
+        b.marcarListo("caro");
+        assertFalse(nueva.listaParaIniciar(List.of(a, b)), "un equipo de 1 no arranca");
+
+        nueva.unirJugador("dani");
+        b.unirMiembro("dani");
+        b.marcarListo("dani");
+        assertTrue(nueva.listaParaIniciar(List.of(a, b)));
+        assertThrows(SalaLlenaException.class, () -> nueva.unirJugador("eli"));
     }
 
     @Test

@@ -45,7 +45,8 @@ class ListarSalasUseCaseTest {
         SalaDto dto = useCase.ejecutar().get(0);
 
         assertEquals(2, dto.jugadoresActuales());
-        assertEquals(8, dto.cupoTotal());
+        assertEquals(4, dto.cupoTotal());
+        assertEquals(5, dto.minutos());
         assertEquals("DISPONIBLE", dto.estado());
     }
 

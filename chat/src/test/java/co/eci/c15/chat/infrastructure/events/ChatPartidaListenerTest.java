@@ -27,7 +27,7 @@ class ChatPartidaListenerTest {
 
     @Test
     void alTerminarLaPartidaSeOlvidanSusCanales() {
-        listener.onPartidaTerminada(new MatchFinishedEvent("s1", "TIME_UP", null, Map.of()));
+        listener.onPartidaTerminada(new MatchFinishedEvent("s1", "TIME_UP", null, Map.of(), Map.of()));
 
         verify(chat).partidaTerminada("s1");
     }

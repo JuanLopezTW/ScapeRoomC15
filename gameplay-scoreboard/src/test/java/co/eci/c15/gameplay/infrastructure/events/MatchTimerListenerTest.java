@@ -13,12 +13,13 @@ import static org.mockito.Mockito.*;
 class MatchTimerListenerTest {
 
     @Test
-    void startsTheTimerWithTheConfiguredDurationWhenTheMatchBegins() {
+    void startsTheTimerWithTheDurationChosenByTheHost() {
         MatchTimerService timers = mock(MatchTimerService.class);
-        MatchTimerListener listener = new MatchTimerListener(timers, Duration.ofMinutes(30));
+        MatchTimerListener listener = new MatchTimerListener(timers);
 
-        listener.onPartidaIniciada(new PartidaIniciadaEvent("match-1", Map.of("e1", List.of("ana", "beto"))));
+        listener.onPartidaIniciada(new PartidaIniciadaEvent("match-1", Map.of("e1", List.of("ana", "beto")),
+                Duration.ofMinutes(15)));
 
-        verify(timers).start("match-1", Duration.ofMinutes(30));
+        verify(timers).start("match-1", Duration.ofMinutes(15));
     }
 }

@@ -1,7 +1,8 @@
 package co.eci.c15.app;
 
-import co.eci.c15.common.events.AcertijoResueltoEvent;
-import co.eci.c15.common.events.TimeUpEvent;
+import co.eci.c15.app.integracion.EventosEntreServiciosAsincronos;
+import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
+import co.eci.c15.gameplay.domain.events.TimeUpEvent;
 import co.eci.c15.gameplay.application.HeroVillainChallengeService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +29,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 class GanarPartidaFlujoTest {
+
+    @Autowired
+    private EventosEntreServiciosAsincronos entreServicios;
 
     @Autowired
     private MockMvc mvc;
@@ -82,7 +86,8 @@ class GanarPartidaFlujoTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error", containsString("termino")));
 
-        // La sala sale del catalogo; el resultado sigue disponible
+        // La sala sale del catalogo (salas recibe el fin en otro hilo); el resultado sigue disponible
+        await().atMost(Duration.ofSeconds(10)).until(entreServicios::entregados);
         mvc.perform(get("/api/salas/{id}", matchId)).andExpect(status().isNotFound());
         mvc.perform(get("/api/salas"))
                 .andExpect(status().isOk())
@@ -146,6 +151,8 @@ class GanarPartidaFlujoTest {
         }
         await().atMost(Duration.ofSeconds(10)).untilAsserted(() ->
                 mvc.perform(get("/api/salas/{id}", salaId)).andExpect(status().isConflict()));
+        // Gameplay recibe el inicio despues del commit y en otro hilo
+        await().atMost(Duration.ofSeconds(10)).until(entreServicios::entregados);
         return salaId;
     }
 }

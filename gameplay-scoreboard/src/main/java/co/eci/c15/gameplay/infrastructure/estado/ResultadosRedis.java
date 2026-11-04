@@ -21,7 +21,7 @@ import java.util.TreeMap;
 @Primary
 public class ResultadosRedis implements ResultadosPartida {
 
-    private static final TypeReference<List<String>> LISTA = new TypeReference<>() {};
+    private static final TypeReference<TreeMap<String, List<String>>> EQUIPOS = new TypeReference<>() {};
 
     /** Sin las propiedades calculadas del record (como "empate"), que no se pueden volver a leer. */
     record Guardado(String matchId, MatchResult.Reason motivo, String ganador, List<String> empatados,
@@ -46,14 +46,15 @@ public class ResultadosRedis implements ResultadosPartida {
     }
 
     @Override
-    public void guardarEquipos(String matchId, List<String> equipos) {
-        estado.redis().opsForValue().setIfAbsent(clave(matchId, "equipos"), estado.aJson(equipos), estado.vida());
+    public void guardarEquipos(String matchId, Map<String, List<String>> equipos) {
+        estado.redis().opsForValue().setIfAbsent(clave(matchId, "equipos"), estado.aJson(new TreeMap<>(equipos)),
+                estado.vida());
     }
 
     @Override
-    public Optional<List<String>> equipos(String matchId) {
+    public Optional<Map<String, List<String>>> equipos(String matchId) {
         return Optional.ofNullable(estado.redis().opsForValue().get(clave(matchId, "equipos")))
-                .map(json -> estado.deJson(json, LISTA));
+                .map(json -> estado.deJson(json, EQUIPOS));
     }
 
     @Override

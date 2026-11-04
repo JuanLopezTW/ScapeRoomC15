@@ -1,7 +1,7 @@
 package co.eci.c15.gameplay.application;
 
 import co.eci.c15.common.logging.EventoNegocio;
-import co.eci.c15.common.events.AcertijoResueltoEvent;
+import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
 import co.eci.c15.gameplay.domain.AcertijoEnPartida;
 import co.eci.c15.gameplay.domain.AcertijoEnPartidaRepository;
 import co.eci.c15.gameplay.domain.AcertijoRepository;

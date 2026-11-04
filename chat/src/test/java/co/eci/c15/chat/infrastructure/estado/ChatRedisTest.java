@@ -19,7 +19,7 @@ class ChatRedisTest extends RedisDePrueba {
 
     @BeforeEach
     void setUp() {
-        chat = new ChatRedis(redis, JSON, new CaducidadChat(Duration.ofMinutes(5), Duration.ofMinutes(10)));
+        chat = new ChatRedis(redis, JSON, new CaducidadChat(Duration.ofMinutes(10)));
     }
 
     private static MensajeChat mensaje(String canal, String texto) {
@@ -58,7 +58,7 @@ class ChatRedisTest extends RedisDePrueba {
         assertTrue(segundosDeVida("global") > 3500 && segundosDeVida("global") <= 3600);
         assertTrue(segundosDeVida("salas/s1") > 1700 && segundosDeVida("salas/s1") <= 1800);
         // 5 min de partida + 10 de margen
-        assertTrue(segundosDeVida("partidas/m1/equipos/e1") > 850 && segundosDeVida("partidas/m1/equipos/e1") <= 900);
+        assertTrue(segundosDeVida("partidas/m1/equipos/e1") > 1450 && segundosDeVida("partidas/m1/equipos/e1") <= 1500);
     }
 
     @Test

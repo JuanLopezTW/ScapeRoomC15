@@ -1,5 +1,6 @@
 package co.eci.c15.salas.domain;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -15,6 +16,12 @@ public final class Sala {
 
     public static final int MIN_EQUIPOS = 2;
     public static final int MIN_JUGADORES_POR_EQUIPO = 2;
+    /** Por estabilidad (Juan, 2026-11-04) las partidas son de 2 equipos de 2: se configura solo dentro de estos topes. */
+    public static final int MAX_EQUIPOS = 2;
+    public static final int MAX_JUGADORES_POR_EQUIPO = 2;
+    /** Minutos que el anfitrion puede elegir para la partida. */
+    public static final List<Integer> DURACIONES_MINUTOS = List.of(5, 10, 15);
+    public static final int DURACION_DEFECTO_MINUTOS = 5;
 
     private final String id;
     private final String nombre;
@@ -22,28 +29,41 @@ public final class Sala {
     private Estado estado;
     private int numEquipos;
     private int jugadoresPorEquipo;
+    private final int duracionMinutos;
     private final Set<String> jugadores = new HashSet<>();
 
     private Sala(String id, String nombre, String anfitrionId, Estado estado,
-                 int numEquipos, int jugadoresPorEquipo) {
+                 int numEquipos, int jugadoresPorEquipo, int duracionMinutos) {
         this.id = id;
         this.nombre = nombre;
         this.anfitrionId = anfitrionId;
         this.estado = estado;
         this.numEquipos = numEquipos;
         this.jugadoresPorEquipo = jugadoresPorEquipo;
+        this.duracionMinutos = duracionMinutos;
     }
 
     public static Sala crear(String nombre, String anfitrionId) {
+        return crear(nombre, anfitrionId, null);
+    }
+
+    /** @param minutos lo que dura la partida (uno de {@link #DURACIONES_MINUTOS}); null = {@link #DURACION_DEFECTO_MINUTOS} */
+    public static Sala crear(String nombre, String anfitrionId, Integer minutos) {
         if (nombre == null || nombre.isBlank()) throw new IllegalArgumentException("El nombre de la sala no puede estar vacío");
         if (anfitrionId == null || anfitrionId.isBlank()) throw new IllegalArgumentException("El anfitrionId es obligatorio");
-        return new Sala(UUID.randomUUID().toString(), nombre.trim(), anfitrionId, Estado.DISPONIBLE, 2, 4);
+        int duracion = minutos == null ? DURACION_DEFECTO_MINUTOS : minutos;
+        if (!DURACIONES_MINUTOS.contains(duracion)) {
+            throw new ConfiguracionInvalidaException("La partida puede durar " + DURACIONES_MINUTOS + " minutos");
+        }
+        return new Sala(UUID.randomUUID().toString(), nombre.trim(), anfitrionId, Estado.DISPONIBLE,
+                MAX_EQUIPOS, MAX_JUGADORES_POR_EQUIPO, duracion);
     }
 
     /** Reconstruye una sala ya existente (desde persistencia) conservando su id y su estado. */
-    public static Sala reconstituir(String id, String nombre, String anfitrionId, Estado estado,
-                                    int numEquipos, int jugadoresPorEquipo, Collection<String> jugadores) {
-        Sala sala = new Sala(Objects.requireNonNull(id), nombre, anfitrionId, estado, numEquipos, jugadoresPorEquipo);
+    public static Sala reconstituir(String id, String nombre, String anfitrionId, Estado estado, int numEquipos,
+                                    int jugadoresPorEquipo, int duracionMinutos, Collection<String> jugadores) {
+        Sala sala = new Sala(Objects.requireNonNull(id), nombre, anfitrionId, estado, numEquipos, jugadoresPorEquipo,
+                duracionMinutos);
         sala.jugadores.addAll(jugadores);
         return sala;
     }
@@ -51,8 +71,13 @@ public final class Sala {
     public void configurar(String solicitanteId, int numEquipos, int jugadoresPorEquipo) {
         if (!anfitrionId.equals(solicitanteId)) throw new NoEsAnfitrionException(solicitanteId);
         if (estado == Estado.EN_PARTIDA) throw new PartidaYaIniciadaException(id);
-        if (numEquipos < MIN_EQUIPOS) throw new ConfiguracionInvalidaException("El número de equipos debe ser al menos " + MIN_EQUIPOS);
-        if (jugadoresPorEquipo < MIN_JUGADORES_POR_EQUIPO) throw new ConfiguracionInvalidaException("Los jugadores por equipo deben ser al menos " + MIN_JUGADORES_POR_EQUIPO);
+        if (numEquipos < MIN_EQUIPOS || numEquipos > MAX_EQUIPOS) {
+            throw new ConfiguracionInvalidaException("El número de equipos debe estar entre " + MIN_EQUIPOS + " y " + MAX_EQUIPOS);
+        }
+        if (jugadoresPorEquipo < MIN_JUGADORES_POR_EQUIPO || jugadoresPorEquipo > MAX_JUGADORES_POR_EQUIPO) {
+            throw new ConfiguracionInvalidaException("Los jugadores por equipo deben estar entre "
+                    + MIN_JUGADORES_POR_EQUIPO + " y " + MAX_JUGADORES_POR_EQUIPO);
+        }
         if (numEquipos * jugadoresPorEquipo < jugadores.size()) {
             throw new ConfiguracionInvalidaException("El nuevo cupo (" + numEquipos * jugadoresPorEquipo
                     + ") es menor que los jugadores que ya están en la sala (" + jugadores.size() + ")");
@@ -104,4 +129,6 @@ public final class Sala {
     public int getJugadoresPorEquipo() { return jugadoresPorEquipo; }
     public Set<String> getJugadores() { return Collections.unmodifiableSet(jugadores); }
     public int getCupoTotal() { return numEquipos * jugadoresPorEquipo; }
+    public int getDuracionMinutos() { return duracionMinutos; }
+    public Duration getDuracion() { return Duration.ofMinutes(duracionMinutos); }
 }

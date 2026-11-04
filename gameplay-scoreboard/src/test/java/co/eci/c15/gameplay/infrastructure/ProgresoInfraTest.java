@@ -1,7 +1,7 @@
 package co.eci.c15.gameplay.infrastructure;
 
 import co.eci.c15.gameplay.application.CandadoEquipo;
-import co.eci.c15.common.events.AcertijoResueltoEvent;
+import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
 import co.eci.c15.common.events.PartidaIniciadaEvent;
 import co.eci.c15.gameplay.application.ObtenerMapaUseCase;
 import co.eci.c15.gameplay.application.ProgresoPartidaDto;

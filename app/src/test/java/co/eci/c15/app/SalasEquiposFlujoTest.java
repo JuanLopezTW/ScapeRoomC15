@@ -32,22 +32,28 @@ class SalasEquiposFlujoTest {
     @Test
     void crearSalaConfigurarYUnirseAEquipo() throws Exception {
         String salaId = leer(mvc.perform(post("/api/salas").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nombre\":\"Sala flujo\",\"anfitrionId\":\"host\"}"))
+                        .content("{\"nombre\":\"Sala flujo\",\"minutos\":10}"))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.minutos").value(10))
+                .andExpect(jsonPath("$.cupoTotal").value(4))
                 .andReturn().getResponse().getContentAsString()).get("id").asText();
 
         mvc.perform(get("/api/salas/{id}/equipos", salaId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
 
+        // Por estabilidad las salas son de 2 equipos de 2: fuera de eso es 400
         mvc.perform(patch("/api/salas/{id}/configuracion", salaId).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"solicitanteId\":\"host\",\"numEquipos\":3,\"jugadoresPorEquipo\":2}"))
+                        .content("{\"numEquipos\":3,\"jugadoresPorEquipo\":2}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(patch("/api/salas/{id}/configuracion", salaId).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"numEquipos\":2,\"jugadoresPorEquipo\":2}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(salaId))
-                .andExpect(jsonPath("$.numEquipos").value(3));
+                .andExpect(jsonPath("$.numEquipos").value(2));
 
         JsonNode equipos = leer(mvc.perform(get("/api/salas/{id}/equipos", salaId))
-                .andExpect(jsonPath("$", hasSize(3)))
+                .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].cupoMaximo").value(2))
                 .andReturn().getResponse().getContentAsString());
         String equipo1 = equipos.get(0).get("id").asText();
@@ -65,6 +71,16 @@ class SalasEquiposFlujoTest {
                         .content("{\"userId\":\"juan\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.miembros[0]").value("juan"));
+    }
+
+    @Test
+    void unaDuracionQueNoSeOfreceDevuelve400() throws Exception {
+        mvc.perform(post("/api/salas").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Sala larga\",\"minutos\":30}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/salas").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nombre\":\"Sala rara\",\"minutos\":\"diez\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

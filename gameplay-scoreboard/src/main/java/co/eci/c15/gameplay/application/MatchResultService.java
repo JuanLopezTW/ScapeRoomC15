@@ -1,19 +1,18 @@
 package co.eci.c15.gameplay.application;
 
 import co.eci.c15.common.logging.EventoNegocio;
-import co.eci.c15.common.events.AcertijoResueltoEvent;
-import co.eci.c15.common.events.ChallengeFinishedEvent;
+import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
+import co.eci.c15.gameplay.domain.events.ChallengeFinishedEvent;
+import co.eci.c15.common.events.EventosEntreServicios;
 import co.eci.c15.common.events.MatchFinishedEvent;
 import co.eci.c15.gameplay.domain.MatchResult;
 import co.eci.c15.gameplay.domain.MatchScoring;
 import co.eci.c15.gameplay.domain.ProgresoEquipo;
 import co.eci.c15.gameplay.domain.ProgresoRepository;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,24 +39,24 @@ public class MatchResultService {
     private final HeroVillainChallengeService challenges;
     private final MatchTimerService timers;
     private final MatchResultNotifier notifier;
-    private final ApplicationEventPublisher events;
     private final ResultadosPartida resultados;
+    private final EventosEntreServicios entreServicios;
 
     public MatchResultService(ProgresoPartidaUseCase progress, ProgresoRepository progressRepository,
                               HeroVillainChallengeService challenges, MatchTimerService timers,
-                              MatchResultNotifier notifier, ApplicationEventPublisher events,
-                              ResultadosPartida resultados) {
+                              MatchResultNotifier notifier,
+                              ResultadosPartida resultados, EventosEntreServicios entreServicios) {
         this.progress = progress;
         this.progressRepository = progressRepository;
         this.challenges = challenges;
         this.timers = timers;
         this.notifier = notifier;
-        this.events = events;
         this.resultados = resultados;
+        this.entreServicios = entreServicios;
     }
 
-    public void matchStarted(String matchId, Collection<String> teamIds) {
-        resultados.guardarEquipos(matchId, teamIds.stream().sorted().toList());
+    public void matchStarted(String matchId, Map<String, List<String>> teams) {
+        resultados.guardarEquipos(matchId, teams);
     }
 
     public void challengeFinished(ChallengeFinishedEvent event) {
@@ -84,8 +83,9 @@ public class MatchResultService {
     public synchronized Optional<MatchResult> finish(String matchId, MatchResult.Reason reason) {
         Optional<MatchResult> existing = resultados.find(matchId);
         if (existing.isPresent()) return existing;
-        List<String> teams = resultados.equipos(matchId).orElse(null);
-        if (teams == null) return Optional.empty();
+        Map<String, List<String>> members = resultados.equipos(matchId).orElse(null);
+        if (members == null) return Optional.empty();
+        List<String> teams = List.copyOf(members.keySet());
 
         // Closes a running challenge first so its winner is counted (publishes ChallengeFinishedEvent).
         challenges.matchOver(matchId);
@@ -102,7 +102,7 @@ public class MatchResultService {
                 .con("equipoGanadorId", result.winnerTeamId()).info();
         Map<String, Integer> scores = new LinkedHashMap<>();
         result.standings().forEach(t -> scores.put(t.teamId(), t.score()));
-        events.publishEvent(new MatchFinishedEvent(matchId, reason.name(), result.winnerTeamId(), scores));
+        entreServicios.publicar(new MatchFinishedEvent(matchId, reason.name(), result.winnerTeamId(), scores, members));
         return Optional.of(result);
     }
 

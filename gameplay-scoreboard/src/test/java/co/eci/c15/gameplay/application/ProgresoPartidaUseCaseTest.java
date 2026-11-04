@@ -1,6 +1,6 @@
 package co.eci.c15.gameplay.application;
 
-import co.eci.c15.common.events.AcertijoResueltoEvent;
+import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
 import co.eci.c15.gameplay.domain.ComponenteMapa;
 import co.eci.c15.gameplay.domain.GeneradorMapa;
 import co.eci.c15.gameplay.domain.MapaIsometrico;

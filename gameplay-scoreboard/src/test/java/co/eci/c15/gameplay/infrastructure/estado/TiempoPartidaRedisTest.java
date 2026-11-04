@@ -181,12 +181,14 @@ class TiempoPartidaRedisTest extends RedisDePrueba {
     @Test
     void elResultadoSeGuardaUnaVezYVuelveIgual() {
         ResultadosRedis resultados = new ResultadosRedis(estado);
-        resultados.guardarEquipos("m1", List.of("A", "B"));
-        resultados.guardarEquipos("m1", List.of("X"));
+        resultados.guardarEquipos("m1", Map.of("B", List.of("caro"), "A", List.of("ana", "beto")));
+        resultados.guardarEquipos("m1", Map.of("X", List.of("otro")));
         resultados.sumarRetoGanado("m1", "A");
         resultados.sumarRetoGanado("m1", "A");
 
-        assertEquals(List.of("A", "B"), resultados.equipos("m1").orElseThrow());
+        Map<String, List<String>> equipos = resultados.equipos("m1").orElseThrow();
+        assertEquals(Map.of("A", List.of("ana", "beto"), "B", List.of("caro")), equipos);
+        assertEquals(List.of("A", "B"), List.copyOf(equipos.keySet()));
         assertEquals(Map.of("A", 2), resultados.retosGanados("m1"));
         assertTrue(resultados.equipos("otra").isEmpty());
         assertTrue(resultados.retosGanados("otra").isEmpty());
@@ -205,7 +207,7 @@ class TiempoPartidaRedisTest extends RedisDePrueba {
     @Test
     void alTerminarLaPartidaSusClavesDeTiempoTambienSeAcortan() {
         new CronometrosRedis(estado).crear(new MatchTimer("m1", AHORA, Duration.ofMinutes(5)));
-        new ResultadosRedis(estado).guardarEquipos("m1", List.of("A", "B"));
+        new ResultadosRedis(estado).guardarEquipos("m1", Map.of("A", List.of("ana"), "B", List.of("caro")));
 
         estado.acortar("m1", Duration.ofMinutes(5));
 

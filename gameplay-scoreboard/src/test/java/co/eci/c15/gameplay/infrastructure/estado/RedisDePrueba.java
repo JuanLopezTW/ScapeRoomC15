@@ -43,7 +43,7 @@ abstract class RedisDePrueba {
     @BeforeEach
     void limpiar() {
         redis.getConnectionFactory().getConnection().serverCommands().flushAll();
-        estado = new EstadoPartidaRedis(redis, JSON, Duration.ofMinutes(5), Duration.ofMinutes(10));
+        estado = new EstadoPartidaRedis(redis, JSON, Duration.ofMinutes(10));
     }
 
     long segundosDeVida(String clave) {

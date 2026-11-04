@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.events.EventosEntreServicios;
 import co.eci.c15.common.events.SalaCerradaEvent;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.Sala;
@@ -21,6 +22,7 @@ class SalirDeSalaUseCaseTest {
     private SalaRepository salas;
     private ArranquePartidaNotifier notifier;
     private ApplicationEventPublisher events;
+    private EventosEntreServicios entreServicios;
     private SalirDeSalaUseCase useCase;
     private Sala sala;
     private Equipo equipo1;
@@ -32,7 +34,8 @@ class SalirDeSalaUseCaseTest {
         salas = mock(SalaRepository.class);
         notifier = mock(ArranquePartidaNotifier.class);
         events = mock(ApplicationEventPublisher.class);
-        useCase = new SalirDeSalaUseCase(salas, equipos, notifier, events);
+        entreServicios = mock(EventosEntreServicios.class);
+        useCase = new SalirDeSalaUseCase(salas, equipos, notifier, events, entreServicios);
 
         sala = Sala.crear("Sala", "host");
         for (String u : new String[]{"host", "ana", "beto"}) sala.unirJugador(u);
@@ -56,7 +59,7 @@ class SalirDeSalaUseCaseTest {
         verify(salas).save(sala);
         verify(events).publishEvent(new SalaActualizadaEvent(sala.getId()));
         verify(salas, never()).delete(any());
-        verify(events, never()).publishEvent(any(SalaCerradaEvent.class));
+        verifyNoInteractions(entreServicios);
         verifyNoInteractions(notifier);
     }
 
@@ -68,7 +71,7 @@ class SalirDeSalaUseCaseTest {
         assertTrue(equipos.findBySalaId(sala.getId()).isEmpty());
         verify(notifier).cerrada(sala.getId());
         verify(events).publishEvent(new SalaActualizadaEvent(sala.getId()));
-        verify(events).publishEvent(new SalaCerradaEvent(sala.getId()));
+        verify(entreServicios).publicar(new SalaCerradaEvent(sala.getId()));
     }
 
     @Test
@@ -88,7 +91,7 @@ class SalirDeSalaUseCaseTest {
         assertTrue(sala.contieneJugador("ana"));
         verify(salas, never()).delete(any());
         verify(salas, never()).save(any());
-        verifyNoInteractions(notifier, events);
+        verifyNoInteractions(notifier, events, entreServicios);
     }
 
     @Test
@@ -97,7 +100,7 @@ class SalirDeSalaUseCaseTest {
         assertEquals(SalirDeSalaUseCase.Resultado.NADA, useCase.ejecutar(sala.getId(), "extraño"));
 
         verify(salas, never()).save(any());
-        verifyNoInteractions(notifier, events);
+        verifyNoInteractions(notifier, events, entreServicios);
     }
 
     @Test

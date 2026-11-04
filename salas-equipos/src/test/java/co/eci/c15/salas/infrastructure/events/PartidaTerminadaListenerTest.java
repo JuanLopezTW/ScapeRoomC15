@@ -15,7 +15,7 @@ class PartidaTerminadaListenerTest {
         FinalizarPartidaUseCase finalizar = mock(FinalizarPartidaUseCase.class);
         PartidaTerminadaListener listener = new PartidaTerminadaListener(finalizar);
 
-        listener.onPartidaTerminada(new MatchFinishedEvent("sala-1", "TIME_UP", null, Map.of()));
+        listener.onPartidaTerminada(new MatchFinishedEvent("sala-1", "TIME_UP", null, Map.of(), Map.of()));
 
         verify(finalizar).ejecutar("sala-1");
     }

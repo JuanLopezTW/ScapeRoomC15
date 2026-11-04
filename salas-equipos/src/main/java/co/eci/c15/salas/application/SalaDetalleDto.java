@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  * y quienes todavia no escogen equipo. Las listas de jugadores van ordenadas.
  */
 public record SalaDetalleDto(String id, String nombre, String anfitrionId, String estado,
-                             int numEquipos, int jugadoresPorEquipo, int cupoTotal,
+                             int numEquipos, int jugadoresPorEquipo, int cupoTotal, int minutos,
                              List<String> jugadores, List<String> sinEquipo, List<EquipoDto> equipos) {
 
     public static SalaDetalleDto from(Sala sala, List<Equipo> equipos) {
@@ -21,7 +21,7 @@ public record SalaDetalleDto(String id, String nombre, String anfitrionId, Strin
                 .collect(Collectors.toSet());
         List<String> jugadores = sala.getJugadores().stream().sorted().toList();
         return new SalaDetalleDto(sala.getId(), sala.getNombre(), sala.getAnfitrionId(), sala.getEstado().name(),
-                sala.getNumEquipos(), sala.getJugadoresPorEquipo(), sala.getCupoTotal(),
+                sala.getNumEquipos(), sala.getJugadoresPorEquipo(), sala.getCupoTotal(), sala.getDuracionMinutos(),
                 jugadores,
                 jugadores.stream().filter(j -> !conEquipo.contains(j)).toList(),
                 equipos.stream().map(EquipoDto::from).toList());

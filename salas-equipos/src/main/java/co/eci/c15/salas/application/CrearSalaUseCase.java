@@ -26,15 +26,20 @@ public class CrearSalaUseCase {
         this.events = events;
     }
 
-    /** Crea la sala con la configuración por defecto y sus equipos vacíos. */
-    @Transactional
     public SalaDto ejecutar(String nombre, String anfitrionId) {
-        Sala sala = salas.save(Sala.crear(nombre, anfitrionId));
+        return ejecutar(nombre, anfitrionId, null);
+    }
+
+    /** Crea la sala (2 equipos de 2) con sus equipos vacíos; {@code minutos} null = duración por defecto. */
+    @Transactional
+    public SalaDto ejecutar(String nombre, String anfitrionId, Integer minutos) {
+        Sala sala = salas.save(Sala.crear(nombre, anfitrionId, minutos));
         for (int numero = 1; numero <= sala.getNumEquipos(); numero++) {
             equipos.save(Equipo.crear(sala.getId(), numero, sala.getJugadoresPorEquipo()));
         }
         events.publishEvent(new SalaCreadaEvent(sala.getId(), sala.getNombre()));
-        EventoNegocio.de(log, "sala.creada").con("salaId", sala.getId()).con("userId", anfitrionId).info();
+        EventoNegocio.de(log, "sala.creada").con("salaId", sala.getId()).con("userId", anfitrionId)
+                .con("minutos", sala.getDuracionMinutos()).info();
         return SalaDto.from(sala);
     }
 }

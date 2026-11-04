@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.events.EventosEntreServicios;
 import co.eci.c15.common.logging.EventoNegocio;
 import co.eci.c15.common.events.PartidaIniciadaEvent;
 import co.eci.c15.salas.domain.Equipo;
@@ -30,11 +31,14 @@ public class IniciarPartidaUseCase {
     private final SalaRepository salas;
     private final EquipoRepository equipos;
     private final ApplicationEventPublisher events;
+    private final EventosEntreServicios entreServicios;
 
-    public IniciarPartidaUseCase(SalaRepository salas, EquipoRepository equipos, ApplicationEventPublisher events) {
+    public IniciarPartidaUseCase(SalaRepository salas, EquipoRepository equipos, ApplicationEventPublisher events,
+                                 EventosEntreServicios entreServicios) {
         this.salas = salas;
         this.equipos = equipos;
         this.events = events;
+        this.entreServicios = entreServicios;
     }
 
     public boolean listaParaIniciar(String salaId) {
@@ -63,10 +67,13 @@ public class IniciarPartidaUseCase {
                 .filter(e -> !e.isVacio())
                 .forEach(e -> jugadoresPorEquipo.put(e.getId(), e.getMiembros().stream().sorted().toList()));
         String matchId = sala.getId();
-        events.publishEvent(new PartidaIniciadaEvent(matchId, Collections.unmodifiableMap(jugadoresPorEquipo)));
+        // Gameplay, chat y estadisticas lo reciben despues del commit: si alguno falla, la sala ya quedo EN_PARTIDA
+        entreServicios.publicar(new PartidaIniciadaEvent(matchId, Collections.unmodifiableMap(jugadoresPorEquipo),
+                sala.getDuracion()));
         events.publishEvent(new SalaActualizadaEvent(salaId));
         EventoNegocio.de(log, "partida.iniciada").con("matchId", matchId).con("equipos", jugadoresPorEquipo.size())
-                .con("jugadores", jugadoresPorEquipo.values().stream().mapToInt(List::size).sum()).info();
+                .con("jugadores", jugadoresPorEquipo.values().stream().mapToInt(List::size).sum())
+                .con("minutos", sala.getDuracionMinutos()).info();
         return Optional.of(matchId);
     }
 }

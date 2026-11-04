@@ -9,10 +9,11 @@ import java.util.Optional;
 /** Lo que el resultado necesita de cada partida: sus equipos, los retos ganados y el resultado final. */
 public interface ResultadosPartida {
 
-    /** Se guarda la primera vez; repetirlo no cambia nada. */
-    void guardarEquipos(String matchId, List<String> equipos);
+    /** Equipos con sus jugadores (equipoId → userIds). Se guarda la primera vez; repetirlo no cambia nada. */
+    void guardarEquipos(String matchId, Map<String, List<String>> equipos);
 
-    Optional<List<String>> equipos(String matchId);
+    /** Ordenados por equipoId. */
+    Optional<Map<String, List<String>>> equipos(String matchId);
 
     void sumarRetoGanado(String matchId, String equipoId);
 

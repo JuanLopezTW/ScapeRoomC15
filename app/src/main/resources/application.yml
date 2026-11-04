@@ -40,7 +40,7 @@ c15:
     # Con Redis: cada cuanto una instancia cierra las salas huerfanas (en espera sin nadie, o sin partida viva)
     barrido: 60s
   partida:
-    duracion: ${PARTIDA_DURACION:30m}
+    # La duracion ya no se configura: la elige el anfitrion al crear la sala (5, 10 o 15 min)
     cuenta-regresiva: 5s
   reto:
     # 5 s del aviso del front (ModalDesafio) + 20 s de juego: el reto corre desde que sale el aviso

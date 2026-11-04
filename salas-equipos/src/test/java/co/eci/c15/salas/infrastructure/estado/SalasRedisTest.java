@@ -70,11 +70,11 @@ class SalasRedisTest {
 
     private BarrenderoSalas barrendero() {
         return new BarrenderoSalas(salas, finalizar, new PresenciaSalaRedis(redis, reloj), redis, reloj,
-                Duration.ofSeconds(60), Duration.ofMinutes(5), Duration.ofMinutes(10));
+                Duration.ofSeconds(60), Duration.ofMinutes(10));
     }
 
     private static Sala sala(String id, Sala.Estado estado) {
-        return Sala.reconstituir(id, "Sala " + id, "host", estado, 2, 4, List.of("host"));
+        return Sala.reconstituir(id, "Sala " + id, "host", estado, 2, 2, 5, List.of("host"));
     }
 
     // ---------- cuenta regresiva ----------
@@ -155,9 +155,9 @@ class SalasRedisTest {
     void unaSalaEnPartidaSinPartidaVivaSeCierraYConPartidaNo() {
         when(salas.findAll()).thenReturn(List.of(sala("viva", Sala.Estado.EN_PARTIDA), sala("perdida", Sala.Estado.EN_PARTIDA)));
         BarrenderoSalas barrendero = barrendero();
-        barrendero.onPartidaIniciada(new PartidaIniciadaEvent("viva", Map.of("e1", List.of("host"))));
+        barrendero.onPartidaIniciada(new PartidaIniciadaEvent("viva", Map.of("e1", List.of("host")), Duration.ofMinutes(15)));
         long vida = redis.getExpire(BarrenderoSalas.enPartida("viva"), TimeUnit.SECONDS);
-        assertTrue(vida > 850 && vida <= 900, "la marca dura la partida + margen: " + vida);
+        assertTrue(vida > 1450 && vida <= 1500, "la marca dura lo que eligio el anfitrion + margen: " + vida);
 
         barrendero.barrer();
 

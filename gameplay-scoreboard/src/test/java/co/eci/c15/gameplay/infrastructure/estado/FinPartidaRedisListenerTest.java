@@ -31,7 +31,7 @@ class FinPartidaRedisListenerTest extends RedisDePrueba {
         }
         try {
             Thread.sleep(300); // que se suscriban
-            enA.onPartidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1)));
+            enA.onPartidaTerminada(new MatchFinishedEvent("m1", "TIME_UP", "e1", Map.of("e1", 1), Map.of()));
 
             for (int i = 0; i < 50 && instanciaB.tieneCopia("m1"); i++) Thread.sleep(50);
             assertFalse(instanciaA.tieneCopia("m1"));

@@ -138,7 +138,7 @@ class ChatEsperaFlujoTest {
         mvc.perform(get(equipo).param("userId", "beto6")).andExpect(jsonPath("$", hasSize(1)));
         mvc.perform(get(equipo).param("userId", "caro6")).andExpect(jsonPath("$", hasSize(0)));
 
-        eventos.publishEvent(new MatchFinishedEvent("chat-m1", "TIME_UP", null, Map.of("chat-e1", 0, "chat-e2", 0)));
+        eventos.publishEvent(new MatchFinishedEvent("chat-m1", "TIME_UP", null, Map.of("chat-e1", 0, "chat-e2", 0), Map.of()));
 
         enviar(general, "ana6", "tarde").andExpect(status().isConflict());
         assertTrue(historial.historial("partidas/chat-m1").isEmpty());

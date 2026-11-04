@@ -1,5 +1,6 @@
 package co.eci.c15.chat.infrastructure.estado;
 
+import co.eci.c15.common.events.PartidaIniciadaEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -21,12 +22,11 @@ public class CaducidadChat {
 
     private final Duration partida;
 
-    public CaducidadChat(@Value("${c15.partida.duracion:30m}") Duration duracion,
-                         @Value("${c15.estado.margen:10m}") Duration margen) {
-        this.partida = duracion.plus(margen);
+    public CaducidadChat(@Value("${c15.estado.margen:10m}") Duration margen) {
+        this.partida = PartidaIniciadaEvent.DURACION_MAXIMA.plus(margen);
     }
 
-    /** Partida y equipos: lo que dura la partida mas el margen. */
+    /** Partida y equipos: lo mas que puede durar una partida, mas el margen. */
     public Duration partida() {
         return partida;
     }

@@ -59,7 +59,7 @@ class CatalogoFlujoTest {
 
         SalaDto a = buscar(catalogo, alfa);
         assertEquals(1, a.jugadoresActuales());
-        assertEquals(8, a.cupoTotal());
+        assertEquals(4, a.cupoTotal());
         assertEquals("DISPONIBLE", a.estado());
         assertEquals("EN_PARTIDA", buscar(catalogo, zeta).estado());
         assertTrue(catalogo.indexOf(a) < catalogo.indexOf(buscar(catalogo, zeta)));

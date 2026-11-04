@@ -1,5 +1,6 @@
 package co.eci.c15.app;
 
+import co.eci.c15.app.integracion.EventosEntreServiciosAsincronos;
 import co.eci.c15.gameplay.application.HeroVillainChallengeService;
 import co.eci.c15.gameplay.domain.ChallengeResult;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,6 +36,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RetoHeroeVerdugoFlujoTest {
 
     private static final int CLICKS_PER_PLAYER = 60;
+
+    @Autowired
+    private EventosEntreServiciosAsincronos entreServicios;
 
     @Autowired
     private MockMvc mvc;
@@ -146,6 +150,8 @@ class RetoHeroeVerdugoFlujoTest {
         }
         await().atMost(Duration.ofSeconds(10)).untilAsserted(() ->
                 mvc.perform(get("/api/salas/{id}", salaId)).andExpect(status().isConflict()));
+        // Gameplay recibe el inicio despues del commit y en otro hilo
+        await().atMost(Duration.ofSeconds(10)).until(entreServicios::entregados);
         return salaId;
     }
 

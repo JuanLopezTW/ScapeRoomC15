@@ -1,13 +1,12 @@
 package co.eci.c15.gameplay.application;
 
-import co.eci.c15.common.events.AcertijoResueltoEvent;
+import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
 import co.eci.c15.gameplay.domain.ProgresoEquipo;
 import co.eci.c15.gameplay.domain.ProgresoRepository;
 import co.eci.c15.gameplay.domain.TipoComponente;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

@@ -30,44 +30,36 @@ class ConfigurarSalaUseCaseTest {
         equipos = new EquiposEnMemoria();
         events = mock(ApplicationEventPublisher.class);
         useCase = new ConfigurarSalaUseCase(repo, equipos, events);
-        sala = Sala.crear("Sala 1", "anfitrion-1");
-        equipos.save(Equipo.crear(sala.getId(), 1, 4));
-        equipos.save(Equipo.crear(sala.getId(), 2, 4));
+        // Sala guardada antes del tope de 2 equipos de 2 (3 equipos de 4): reconfigurarla la ajusta
+        sala = Sala.reconstituir("s1", "Sala 1", "anfitrion-1", Sala.Estado.DISPONIBLE, 3, 4, 5, List.of());
+        for (int numero = 1; numero <= 3; numero++) equipos.save(Equipo.crear(sala.getId(), numero, 4));
         when(repo.findById(sala.getId())).thenReturn(Optional.of(sala));
         when(repo.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test
     void anfitrionConfiguraYPublicaEvento() {
-        SalaDto dto = useCase.ejecutar(sala.getId(), "anfitrion-1", 3, 5);
-        assertEquals(3, dto.numEquipos());
-        assertEquals(5, dto.jugadoresPorEquipo());
+        SalaDto dto = useCase.ejecutar(sala.getId(), "anfitrion-1", 2, 2);
+        assertEquals(2, dto.numEquipos());
+        assertEquals(2, dto.jugadoresPorEquipo());
         verify(events).publishEvent(any(SalaActualizadaEvent.class));
     }
 
     @Test
-    void masEquiposCreaLosQueFaltanConElNuevoCupo() {
-        useCase.ejecutar(sala.getId(), "anfitrion-1", 3, 5);
+    void menosEquiposEliminaLosSobrantesVaciosYAjustaElCupo() {
+        useCase.ejecutar(sala.getId(), "anfitrion-1", 2, 2);
         List<Equipo> resultado = equipos.findBySalaId(sala.getId());
-        assertEquals(List.of(1, 2, 3), resultado.stream().map(Equipo::getNumero).toList());
-        assertTrue(resultado.stream().allMatch(e -> e.getCupoMaximo() == 5));
-    }
-
-    @Test
-    void menosEquiposEliminaLosSobrantesVacios() {
-        useCase.ejecutar(sala.getId(), "anfitrion-1", 3, 4);
-        useCase.ejecutar(sala.getId(), "anfitrion-1", 2, 4);
-        assertEquals(List.of(1, 2), equipos.findBySalaId(sala.getId()).stream().map(Equipo::getNumero).toList());
+        assertEquals(List.of(1, 2), resultado.stream().map(Equipo::getNumero).toList());
+        assertTrue(resultado.stream().allMatch(e -> e.getCupoMaximo() == 2));
     }
 
     @Test
     void noSeQuitaUnEquipoConJugadores() {
-        useCase.ejecutar(sala.getId(), "anfitrion-1", 3, 4);
         sala.unirJugador("user-1");
         equipos.findBySalaId(sala.getId()).get(2).unirMiembro("user-1");
 
         assertThrows(ConfiguracionInvalidaException.class,
-                () -> useCase.ejecutar(sala.getId(), "anfitrion-1", 2, 4));
+                () -> useCase.ejecutar(sala.getId(), "anfitrion-1", 2, 2));
         assertEquals(3, equipos.findBySalaId(sala.getId()).size());
     }
 
@@ -87,17 +79,25 @@ class ConfigurarSalaUseCaseTest {
     }
 
     @Test
+    void fueraDeLosTopesNoCambiaNada() {
+        assertThrows(ConfiguracionInvalidaException.class,
+                () -> useCase.ejecutar(sala.getId(), "anfitrion-1", 3, 5));
+        verify(repo, never()).save(any());
+        assertEquals(3, equipos.findBySalaId(sala.getId()).size());
+    }
+
+    @Test
     void noAnfitrionLanzaExcepcion() {
         assertThrows(NoEsAnfitrionException.class,
-                () -> useCase.ejecutar(sala.getId(), "otro-user", 3, 5));
+                () -> useCase.ejecutar(sala.getId(), "otro-user", 2, 2));
         verify(repo, never()).save(any());
-        assertEquals(2, equipos.findBySalaId(sala.getId()).size());
+        assertEquals(3, equipos.findBySalaId(sala.getId()).size());
     }
 
     @Test
     void salaInexistenteLanzaExcepcion() {
         when(repo.findById("no-existe")).thenReturn(Optional.empty());
         assertThrows(IllegalArgumentException.class,
-                () -> useCase.ejecutar("no-existe", "anfitrion-1", 2, 4));
+                () -> useCase.ejecutar("no-existe", "anfitrion-1", 2, 2));
     }
 }

@@ -19,7 +19,7 @@ public class SalaRepositoryAdapter implements SalaRepository {
     @Override
     public Sala save(Sala sala) {
         jpa.save(new SalaJpa(sala.getId(), sala.getNombre(), sala.getAnfitrionId(), sala.getEstado(),
-                sala.getNumEquipos(), sala.getJugadoresPorEquipo(), sala.getJugadores()));
+                sala.getNumEquipos(), sala.getJugadoresPorEquipo(), sala.getDuracionMinutos(), sala.getJugadores()));
         return sala;
     }
 
@@ -40,6 +40,7 @@ public class SalaRepositoryAdapter implements SalaRepository {
 
     private Sala toDomain(SalaJpa e) {
         return Sala.reconstituir(e.getId(), e.getNombre(), e.getAnfitrionId(), e.getEstado(),
-                e.getNumEquipos(), e.getJugadoresPorEquipo(), e.getJugadores());
+                e.getNumEquipos(), e.getJugadoresPorEquipo(),
+                e.getDuracionMinutos() != null ? e.getDuracionMinutos() : Sala.DURACION_DEFECTO_MINUTOS, e.getJugadores());
     }
 }

@@ -1,7 +1,8 @@
 package co.eci.c15.gameplay.application;
 
-import co.eci.c15.common.events.AcertijoResueltoEvent;
-import co.eci.c15.common.events.ChallengeFinishedEvent;
+import co.eci.c15.common.events.EventosEntreServicios;
+import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
+import co.eci.c15.gameplay.domain.events.ChallengeFinishedEvent;
 import co.eci.c15.common.events.MatchFinishedEvent;
 import co.eci.c15.gameplay.domain.MatchResult;
 import co.eci.c15.gameplay.domain.ProgresoRepository;
@@ -9,7 +10,6 @@ import co.eci.c15.gameplay.infrastructure.estado.TiempoPartidaEnMemoria;
 import co.eci.c15.gameplay.infrastructure.persistence.ProgresoRepositoryEnMemoria;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Map;
@@ -20,12 +20,14 @@ import static org.mockito.Mockito.*;
 
 class MatchResultServiceTest {
 
+    private static final Map<String, List<String>> EQUIPOS = Map.of("A", List.of("ana"), "B", List.of("beto"));
+
     private ProgresoRepository progressRepository;
     private ProgresoPartidaUseCase progress;
     private HeroVillainChallengeService challenges;
     private MatchTimerService timers;
     private MatchResultNotifier notifier;
-    private ApplicationEventPublisher events;
+    private EventosEntreServicios events;
     private MatchResultService service;
 
     @BeforeEach
@@ -41,10 +43,10 @@ class MatchResultServiceTest {
         challenges = mock(HeroVillainChallengeService.class);
         timers = mock(MatchTimerService.class);
         notifier = mock(MatchResultNotifier.class);
-        events = mock(ApplicationEventPublisher.class);
-        service = new MatchResultService(progress, progressRepository, challenges, timers, notifier, events,
-                new TiempoPartidaEnMemoria().resultadosEnMemoria());
-        service.matchStarted("m1", List.of("B", "A"));
+        events = mock(EventosEntreServicios.class);
+        service = new MatchResultService(progress, progressRepository, challenges, timers, notifier,
+                new TiempoPartidaEnMemoria().resultadosEnMemoria(), events);
+        service.matchStarted("m1", EQUIPOS);
         progressRepository.obtener("m1", "A", 3);
         progressRepository.obtener("m1", "B", 3);
     }
@@ -68,7 +70,7 @@ class MatchResultServiceTest {
         verify(challenges).matchOver("m1");
         verify(timers, never()).stop(any());
         verify(notifier).notify(result);
-        verify(events).publishEvent(new MatchFinishedEvent("m1", "TIME_UP", "B", Map.of("B", 2, "A", 1)));
+        verify(events).publicar(new MatchFinishedEvent("m1", "TIME_UP", "B", Map.of("B", 2, "A", 1), EQUIPOS));
     }
 
     @Test
@@ -99,7 +101,7 @@ class MatchResultServiceTest {
         MatchResult result = service.find("m1").orElseThrow();
         assertTrue(result.isDraw());
         assertEquals(List.of("A", "B"), result.tiedTeamIds());
-        verify(events).publishEvent(new MatchFinishedEvent("m1", "TIME_UP", null, Map.of("A", 1, "B", 1)));
+        verify(events).publicar(new MatchFinishedEvent("m1", "TIME_UP", null, Map.of("A", 1, "B", 1), EQUIPOS));
     }
 
     @Test
@@ -141,7 +143,7 @@ class MatchResultServiceTest {
         solve("A", "acertijo-1");
 
         verify(notifier, times(1)).notify(any());
-        verify(events, times(1)).publishEvent(any(MatchFinishedEvent.class));
+        verify(events, times(1)).publicar(any(MatchFinishedEvent.class));
         assertEquals(0, service.find("m1").orElseThrow().standings().get(0).score());
     }
 

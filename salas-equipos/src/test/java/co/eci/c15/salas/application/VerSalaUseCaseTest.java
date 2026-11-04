@@ -48,7 +48,8 @@ class VerSalaUseCaseTest {
         assertEquals("Sala lobby", dto.nombre());
         assertEquals("host", dto.anfitrionId());
         assertEquals("DISPONIBLE", dto.estado());
-        assertEquals(8, dto.cupoTotal());
+        assertEquals(4, dto.cupoTotal());
+        assertEquals(5, dto.minutos());
         assertEquals(List.of("ana", "beto", "caro", "host"), dto.jugadores());
         assertEquals(2, dto.equipos().size());
         assertEquals(1, dto.equipos().get(0).numero());

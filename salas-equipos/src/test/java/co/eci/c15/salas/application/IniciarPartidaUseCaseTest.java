@@ -1,5 +1,6 @@
 package co.eci.c15.salas.application;
 
+import co.eci.c15.common.events.EventosEntreServicios;
 import co.eci.c15.common.events.PartidaIniciadaEvent;
 import co.eci.c15.salas.domain.Equipo;
 import co.eci.c15.salas.domain.Sala;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,6 +24,7 @@ class IniciarPartidaUseCaseTest {
     private EquiposEnMemoria equipos;
     private SalaRepository salas;
     private ApplicationEventPublisher events;
+    private EventosEntreServicios entreServicios;
     private IniciarPartidaUseCase useCase;
     private Sala sala;
     private Equipo equipo1;
@@ -32,14 +35,13 @@ class IniciarPartidaUseCaseTest {
         equipos = new EquiposEnMemoria();
         salas = mock(SalaRepository.class);
         events = mock(ApplicationEventPublisher.class);
-        useCase = new IniciarPartidaUseCase(salas, equipos, events);
-        sala = Sala.crear("Sala", "host");
-        sala.configurar("host", 3, 4);
+        entreServicios = mock(EventosEntreServicios.class);
+        useCase = new IniciarPartidaUseCase(salas, equipos, events, entreServicios);
+        sala = Sala.crear("Sala", "host", 10);
         when(salas.findById(sala.getId())).thenReturn(Optional.of(sala));
         when(salas.findById("no-existe")).thenReturn(Optional.empty());
-        equipo1 = equipos.save(Equipo.crear(sala.getId(), 1, 4));
-        equipo2 = equipos.save(Equipo.crear(sala.getId(), 2, 4));
-        equipos.save(Equipo.crear(sala.getId(), 3, 4));
+        equipo1 = equipos.save(Equipo.crear(sala.getId(), 1, 2));
+        equipo2 = equipos.save(Equipo.crear(sala.getId(), 2, 2));
         listos(equipo1, "beto", "ana");
         listos(equipo2, "caro", "dani");
     }
@@ -53,7 +55,7 @@ class IniciarPartidaUseCaseTest {
     }
 
     @Test
-    void iniciaLaPartidaYPublicaElEventoConLosEquiposConJugadores() {
+    void iniciaLaPartidaYPublicaElEventoConLosEquiposYLaDuracionElegida() {
         Optional<String> matchId = useCase.iniciar(sala.getId());
 
         assertEquals(Optional.of(sala.getId()), matchId);
@@ -61,10 +63,11 @@ class IniciarPartidaUseCaseTest {
         verify(salas).save(sala);
 
         ArgumentCaptor<PartidaIniciadaEvent> evento = ArgumentCaptor.forClass(PartidaIniciadaEvent.class);
-        verify(events).publishEvent(evento.capture());
+        verify(entreServicios).publicar(evento.capture());
         assertEquals(sala.getId(), evento.getValue().matchId());
         assertEquals(Map.of(equipo1.getId(), List.of("ana", "beto"), equipo2.getId(), List.of("caro", "dani")),
                 evento.getValue().equipos());
+        assertEquals(Duration.ofMinutes(10), evento.getValue().duracion());
         verify(events).publishEvent(new SalaActualizadaEvent(sala.getId()));
     }
 
@@ -75,16 +78,16 @@ class IniciarPartidaUseCaseTest {
         assertTrue(useCase.iniciar(sala.getId()).isEmpty());
         assertEquals(Sala.Estado.DISPONIBLE, sala.getEstado());
         verify(salas, never()).save(any());
-        verifyNoInteractions(events);
+        verifyNoInteractions(events, entreServicios);
     }
 
     @Test
     void noIniciaDosVeces() {
         useCase.iniciar(sala.getId());
-        clearInvocations(events);
+        clearInvocations(events, entreServicios);
 
         assertTrue(useCase.iniciar(sala.getId()).isEmpty());
-        verifyNoInteractions(events);
+        verifyNoInteractions(events, entreServicios);
     }
 
     @Test

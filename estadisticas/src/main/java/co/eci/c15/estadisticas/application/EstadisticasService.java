@@ -18,11 +18,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Registra el resultado de cada jugador cuando termina una partida y arma el ranking. Solo escucha
- * eventos: los equipos llegan al iniciar la partida porque el evento de fin solo trae puntajes.
+ * Registra el resultado de cada jugador cuando termina una partida y arma el ranking. No guarda nada
+ * en memoria: el evento de fin trae los equipos, asi da igual que instancia (o servicio) lo atienda.
  */
 @Service
 public class EstadisticasService {
@@ -34,7 +33,6 @@ public class EstadisticasService {
 
     private final EstadisticasRepository repositorio;
     private final Clock clock;
-    private final Map<String, Map<String, List<String>>> equiposPorPartida = new ConcurrentHashMap<>();
 
     @Autowired
     public EstadisticasService(EstadisticasRepository repositorio) {
@@ -46,15 +44,11 @@ public class EstadisticasService {
         this.clock = clock;
     }
 
-    public void partidaIniciada(String matchId, Map<String, List<String>> equipos) {
-        equiposPorPartida.put(matchId, equipos);
-    }
-
-    /** Devuelve si la partida quedo registrada (false si no se conocian sus equipos o ya estaba). */
+    /** Devuelve si la partida quedo registrada (false si no trae equipos o ya estaba). */
     @Transactional
     public boolean partidaTerminada(MatchFinishedEvent evento) {
-        Map<String, List<String>> equipos = equiposPorPartida.remove(evento.matchId());
-        if (equipos == null || repositorio.existePartida(evento.matchId())) return false;
+        Map<String, List<String>> equipos = evento.equipos();
+        if (equipos == null || equipos.isEmpty() || repositorio.existePartida(evento.matchId())) return false;
 
         Instant ahora = clock.instant();
         int mejorPuntaje = evento.scores().values().stream().mapToInt(Integer::intValue).max().orElse(0);

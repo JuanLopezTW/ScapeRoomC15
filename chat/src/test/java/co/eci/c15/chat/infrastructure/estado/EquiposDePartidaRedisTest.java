@@ -18,7 +18,7 @@ class EquiposDePartidaRedisTest extends RedisDePrueba {
 
     @BeforeEach
     void setUp() {
-        equipos = new EquiposDePartidaRedis(redis, JSON, new CaducidadChat(Duration.ofMinutes(5), Duration.ofMinutes(10)));
+        equipos = new EquiposDePartidaRedis(redis, JSON, new CaducidadChat(Duration.ofMinutes(10)));
     }
 
     @Test
@@ -27,7 +27,7 @@ class EquiposDePartidaRedisTest extends RedisDePrueba {
 
         assertEquals(EQUIPOS, equipos.de("m1").orElseThrow());
         long segundos = redis.getExpire(EquiposDePartidaRedis.PREFIJO + "m1", TimeUnit.SECONDS);
-        assertTrue(segundos > 850 && segundos <= 900, "caduca en " + segundos + " s");
+        assertTrue(segundos > 1450 && segundos <= 1500, "caduca en " + segundos + " s");
     }
 
     @Test

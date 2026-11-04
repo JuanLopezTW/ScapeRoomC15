@@ -22,9 +22,8 @@ class SalaRepositoryAdapterTest {
     private TestEntityManager em;
 
     @Test
-    void conservaIdConfiguracionYJugadores() {
-        Sala sala = Sala.crear("Sala 1", "anfitrion-1");
-        sala.configurar("anfitrion-1", 3, 5);
+    void conservaIdConfiguracionDuracionYJugadores() {
+        Sala sala = Sala.crear("Sala 1", "anfitrion-1", 15);
         sala.unirJugador("user-1");
         sala.unirJugador("user-2");
         adapter.save(sala);
@@ -35,9 +34,22 @@ class SalaRepositoryAdapterTest {
         assertEquals(sala.getId(), leida.getId());
         assertEquals("Sala 1", leida.getNombre());
         assertEquals("anfitrion-1", leida.getAnfitrionId());
-        assertEquals(3, leida.getNumEquipos());
-        assertEquals(5, leida.getJugadoresPorEquipo());
+        assertEquals(2, leida.getNumEquipos());
+        assertEquals(2, leida.getJugadoresPorEquipo());
+        assertEquals(15, leida.getDuracionMinutos());
         assertEquals(Set.of("user-1", "user-2"), leida.getJugadores());
+    }
+
+    @Test
+    void unaSalaGuardadaAntesDeLaDuracionUsaLaDuracionPorDefecto() {
+        Sala sala = Sala.crear("Vieja", "anfitrion-1", 15);
+        adapter.save(sala);
+        em.flush();
+        em.getEntityManager().createNativeQuery("update salas set duracion_minutos = null where id = ?1")
+                .setParameter(1, sala.getId()).executeUpdate();
+        em.clear();
+
+        assertEquals(Sala.DURACION_DEFECTO_MINUTOS, adapter.findById(sala.getId()).orElseThrow().getDuracionMinutos());
     }
 
     @Test
