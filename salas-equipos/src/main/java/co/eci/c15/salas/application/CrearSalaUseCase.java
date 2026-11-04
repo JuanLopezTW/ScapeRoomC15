@@ -26,10 +26,6 @@ public class CrearSalaUseCase {
         this.events = events;
     }
 
-    public SalaDto ejecutar(String nombre, String anfitrionId) {
-        return ejecutar(nombre, anfitrionId, null);
-    }
-
     /** Crea la sala (2 equipos de 2) con sus equipos vacíos; {@code minutos} null = duración por defecto. */
     @Transactional
     public SalaDto ejecutar(String nombre, String anfitrionId, Integer minutos) {

@@ -32,7 +32,7 @@ class CrearSalaUseCaseTest {
 
     @Test
     void creaYPublicaEvento() {
-        SalaDto dto = useCase.ejecutar("Sala 1", "user-1");
+        SalaDto dto = useCase.ejecutar("Sala 1", "user-1", null);
         assertEquals("Sala 1", dto.nombre());
         assertEquals("DISPONIBLE", dto.estado());
         verify(events).publishEvent(any(SalaCreadaEvent.class));
@@ -40,7 +40,7 @@ class CrearSalaUseCaseTest {
 
     @Test
     void creaLosEquiposPorDefectoVacios() {
-        SalaDto dto = useCase.ejecutar("Sala 1", "user-1");
+        SalaDto dto = useCase.ejecutar("Sala 1", "user-1", null);
 
         ArgumentCaptor<Equipo> captor = ArgumentCaptor.forClass(Equipo.class);
         verify(equipos, times(dto.numEquipos())).save(captor.capture());
@@ -53,7 +53,7 @@ class CrearSalaUseCaseTest {
 
     @Test
     void nombreVacioLanzaExcepcion() {
-        assertThrows(IllegalArgumentException.class, () -> useCase.ejecutar("", "user-1"));
+        assertThrows(IllegalArgumentException.class, () -> useCase.ejecutar("", "user-1", null));
         verifyNoInteractions(events, equipos);
     }
 }
