@@ -1,5 +1,6 @@
 package co.eci.c15.app;
 
+import co.eci.c15.app.integracion.EventosEntreServiciosAsincronos;
 import co.eci.c15.chat.domain.ChatRepository;
 import co.eci.c15.common.events.MatchFinishedEvent;
 import co.eci.c15.common.events.PartidaIniciadaEvent;
@@ -15,9 +16,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,6 +31,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 class ChatEsperaFlujoTest {
+
+    @Autowired
+    private EventosEntreServiciosAsincronos entreServicios;
 
     @Autowired
     private MockMvc mvc;
@@ -97,6 +103,8 @@ class ChatEsperaFlujoTest {
 
         mvc.perform(delete("/api/salas/{id}/jugadores/{u}", salaId, "ana4")).andExpect(status().isNoContent());
 
+        // El chat recibe el cierre despues del commit y en otro hilo
+        await().atMost(Duration.ofSeconds(10)).until(entreServicios::entregados);
         assertTrue(historial.historial("salas/" + salaId).isEmpty());
         enviar(ruta, "beto4", "alguien?").andExpect(status().isConflict());
     }

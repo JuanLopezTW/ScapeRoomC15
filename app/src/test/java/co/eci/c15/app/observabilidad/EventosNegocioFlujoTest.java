@@ -1,5 +1,6 @@
 package co.eci.c15.app.observabilidad;
 
+import co.eci.c15.app.integracion.EventosEntreServiciosAsincronos;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -31,6 +32,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class EventosNegocioFlujoTest {
 
     private static final String SECRETO = "mi-clave-del-chat-no-debe-salir";
+
+    @Autowired
+    private EventosEntreServiciosAsincronos entreServicios;
 
     @Autowired
     private MockMvc mvc;
@@ -103,6 +107,8 @@ class EventosNegocioFlujoTest {
             for (String u : equipo) enviar("/api/salas/" + salaId + "/listo", "{\"userId\":\"" + u + "\"}");
         }
         await().atMost(Duration.ofSeconds(10)).until(() -> nombres().contains("partida.iniciada"));
+        // Gameplay arma la partida despues del commit y en otro hilo
+        await().atMost(Duration.ofSeconds(10)).until(entreServicios::entregados);
 
         mvc.perform(post("/dev/partidas/{m}/reto/inicio", salaId)).andExpect(status().isOk());
         mvc.perform(delete("/api/partidas/{m}/jugadores/{u}", salaId, "ev-dani")).andExpect(status().isNoContent());
