@@ -1,6 +1,6 @@
 package co.eci.c15.app.observabilidad;
 
-import co.eci.c15.app.integracion.EventosEntreServiciosAsincronos;
+import co.eci.c15.app.integracion.SeguimientoEventos;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -34,7 +34,7 @@ class EventosNegocioFlujoTest {
     private static final String SECRETO = "mi-clave-del-chat-no-debe-salir";
 
     @Autowired
-    private EventosEntreServiciosAsincronos entreServicios;
+    private SeguimientoEventos entreServicios;
 
     @Autowired
     private MockMvc mvc;

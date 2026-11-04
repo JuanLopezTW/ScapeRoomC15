@@ -1,6 +1,6 @@
 package co.eci.c15.app;
 
-import co.eci.c15.app.integracion.EventosEntreServiciosAsincronos;
+import co.eci.c15.app.integracion.SeguimientoEventos;
 import co.eci.c15.gameplay.application.HeroVillainChallengeService;
 import co.eci.c15.gameplay.domain.ChallengeResult;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,7 +38,7 @@ class RetoHeroeVerdugoFlujoTest {
     private static final int CLICKS_PER_PLAYER = 60;
 
     @Autowired
-    private EventosEntreServiciosAsincronos entreServicios;
+    private SeguimientoEventos entreServicios;
 
     @Autowired
     private MockMvc mvc;

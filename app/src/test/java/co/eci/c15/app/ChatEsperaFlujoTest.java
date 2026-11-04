@@ -1,6 +1,6 @@
 package co.eci.c15.app;
 
-import co.eci.c15.app.integracion.EventosEntreServiciosAsincronos;
+import co.eci.c15.app.integracion.SeguimientoEventos;
 import co.eci.c15.chat.domain.ChatRepository;
 import co.eci.c15.common.events.MatchFinishedEvent;
 import co.eci.c15.common.events.PartidaIniciadaEvent;
@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ChatEsperaFlujoTest {
 
     @Autowired
-    private EventosEntreServiciosAsincronos entreServicios;
+    private SeguimientoEventos entreServicios;
 
     @Autowired
     private MockMvc mvc;

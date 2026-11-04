@@ -1,6 +1,6 @@
 package co.eci.c15.app;
 
-import co.eci.c15.app.integracion.EventosEntreServiciosAsincronos;
+import co.eci.c15.app.integracion.SeguimientoEventos;
 import co.eci.c15.gameplay.domain.events.AcertijoResueltoEvent;
 import co.eci.c15.gameplay.domain.events.TimeUpEvent;
 import co.eci.c15.gameplay.application.HeroVillainChallengeService;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class GanarPartidaFlujoTest {
 
     @Autowired
-    private EventosEntreServiciosAsincronos entreServicios;
+    private SeguimientoEventos entreServicios;
 
     @Autowired
     private MockMvc mvc;

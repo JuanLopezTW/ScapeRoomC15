@@ -1,6 +1,6 @@
 package co.eci.c15.app;
 
-import co.eci.c15.app.integracion.EventosEntreServiciosAsincronos;
+import co.eci.c15.app.integracion.SeguimientoEventos;
 import co.eci.c15.salas.application.CuentaRegresivaPartida;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PartidaInicioFlujoTest {
 
     @Autowired
-    private EventosEntreServiciosAsincronos entreServicios;
+    private SeguimientoEventos entreServicios;
 
     @Autowired
     private MockMvc mvc;

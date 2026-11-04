@@ -24,6 +24,23 @@ spring:
       # Solo se usa como almacen de estado, no como repositorio de Spring Data
       repositories:
         enabled: false
+  # Solo se conecta con c15.eventos.kafka=true (Event Hubs en Azure: bootstrap <namespace>.servicebus.windows.net:9093 + SASL)
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVIDORES:localhost:9092}
+    producer:
+      # Kafka confirma cuando todas las replicas lo tienen y no duplica por reintentos del productor
+      acks: all
+    consumer:
+      # Un grupo nuevo empieza por lo que llegue (no repite partidas viejas); el grupo luego recuerda por donde va
+      auto-offset-reset: ${KAFKA_DESDE:latest}
+    template:
+      # La traza (traceId) viaja en los headers del mensaje hasta quien lo recibe
+      observation-enabled: true
+    listener:
+      observation-enabled: true
+    admin:
+      # Crea los topics si no existen (en Event Hubs se crean a mano)
+      auto-create: ${KAFKA_CREAR_TOPICS:true}
 
 server:
   port: 8080
@@ -45,6 +62,12 @@ c15:
   reto:
     # 5 s del aviso del front (ModalDesafio) + 20 s de juego: el reto corre desde que sale el aviso
     duracion: ${RETO_DURACION:25s}
+  eventos:
+    # false: los eventos entre servicios van en memoria (un hilo propio). true: por Kafka, como entre microservicios
+    kafka: ${EVENTOS_KAFKA:false}
+    prefijo: ${KAFKA_PREFIJO:c15.}
+    # Todas las instancias del monolito en el mismo grupo: cada evento lo atiende una sola
+    grupo: ${KAFKA_GRUPO:c15-monolito}
   stomp:
     broker:
       # false: broker en memoria (una sola instancia). true: RabbitMQ con el plugin STOMP (varias instancias)
@@ -59,6 +82,9 @@ logging:
   structured:
     format:
       console: ecs
+  level:
+    # El cliente de Kafka escribe mucho en INFO (configuracion, rebalanceos); solo avisos y errores
+    org.apache.kafka: warn
 
 management:
   health:

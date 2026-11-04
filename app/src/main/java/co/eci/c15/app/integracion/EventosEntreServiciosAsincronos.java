@@ -4,6 +4,7 @@ import co.eci.c15.common.events.EventosEntreServicios;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.task.support.ContextPropagatingTaskDecorator;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -16,11 +17,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 /**
  * Los eventos entre servicios, dentro del monolito: se entregan solo si la transaccion de quien los publica
  * confirma, y en un hilo propio, asi las carreras que traera el broker aparecen desde ya. Un solo hilo
- * mantiene el orden (el fin de una partida nunca llega antes que su inicio). Al cortar, esta clase se
- * cambia por la que publique en Kafka.
+ * mantiene el orden (el fin de una partida nunca llega antes que su inicio). Con {@code c15.eventos.kafka=true}
+ * se usa {@link EventosEntreServiciosKafka} en su lugar (lo que usaran los microservicios).
  */
 @Component
-public class EventosEntreServiciosAsincronos implements EventosEntreServicios, DisposableBean {
+@ConditionalOnProperty(name = "c15.eventos.kafka", havingValue = "false", matchIfMissing = true)
+public class EventosEntreServiciosAsincronos implements EventosEntreServicios, SeguimientoEventos, DisposableBean {
 
     private static final Logger log = LoggerFactory.getLogger(EventosEntreServiciosAsincronos.class);
 
@@ -60,7 +62,7 @@ public class EventosEntreServiciosAsincronos implements EventosEntreServicios, D
         }
     }
 
-    /** Si ya entrego todo lo publicado (las pruebas lo usan para esperar a los demas modulos). */
+    @Override
     public boolean entregados() {
         ThreadPoolExecutor cola = hilo.getThreadPoolExecutor();
         return cola.getCompletedTaskCount() == cola.getTaskCount();
